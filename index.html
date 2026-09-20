@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小児薬用量計算アプリ</title>
+<style>
+:root{
+  --bg:#eef1f4; --card:#fff; --ink:#15181d; --sub:#5f6874; --line:#e1e6ec;
+  --accent:#0b6b5e; --accent2:#e6f2f0; --warn:#a8500b; --warnbg:#fdf2e4;
+  --band:#f0f7f5;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  padding:0 0 50px;-webkit-text-size-adjust:100%}
+.wrap{max-width:900px;margin:0 auto;padding:0 14px}
+
+header{background:var(--accent);color:#fff;padding:11px 0}
+header h1{margin:0;font-size:16px;font-weight:600}
+
+/* 入力バー */
+.bar{position:sticky;top:0;z-index:30;background:var(--card);
+  border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.06);padding:9px 0}
+.toprow{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.inputs{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.frow{display:flex;align-items:center;gap:8px}
+.flabel{font-size:14px;font-weight:700;color:var(--sub);width:40px;flex:none}
+.frow input{font:700 28px/1 inherit;padding:0 12px;width:128px;height:54px;
+  border:1.5px solid var(--line);border-radius:11px;background:#fff;color:var(--ink);
+  text-align:right;-webkit-appearance:none}
+.frow input:focus{outline:none;border-color:var(--accent);background:#fbfffe}
+.frow input.auto{color:#8d97a3;border-style:dashed}
+.unit{font-size:15px;color:var(--sub);font-weight:600}
+.stp{flex:none;width:54px;height:54px;border:1.5px solid var(--line);background:#fff;
+  border-radius:11px;color:var(--accent);font:700 26px/1 inherit;cursor:pointer;-webkit-appearance:none}
+.stp:active{background:var(--accent2)}
+
+.rightside{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:2px}
+.rlabel{font-size:13px;font-weight:700;color:var(--sub)}
+.btn{font:600 13px/1 inherit;padding:11px 13px;border:1px solid var(--line);background:#fff;
+  border-radius:10px;color:var(--sub);cursor:pointer;-webkit-appearance:none}
+.btn:active{background:#f2f4f7}
+.cnt{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cnt button{font:700 15px/1 inherit;padding:11px 14px;border:none;background:#fff;
+  color:var(--sub);cursor:pointer}
+.cnt button.on{background:var(--accent);color:#fff}
+#msg{margin-top:10px;font-size:26px;font-weight:700;color:var(--accent);min-height:1.2em;
+  letter-spacing:.01em}
+#msg .est{font-size:15px;font-weight:600;color:#8d97a3}
+#msg.err{color:var(--warn);font-size:18px}
+
+/* セット */
+.sets{margin:12px 0 2px}
+.sets h3{margin:0 0 6px;font-size:11px;color:var(--sub);font-weight:700;letter-spacing:.05em}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;font:600 12.5px/1 inherit;
+  padding:8px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;
+  color:var(--ink);cursor:pointer;-webkit-appearance:none}
+.chip:active{background:#eef4f3}
+.chip.user{border-color:#cfe3df;background:#f4faf9}
+.chip .x{color:var(--sub);font-size:14px;line-height:1;padding:0 2px;border-radius:4px}
+.chip .x:hover{color:var(--warn)}
+.saverow{display:none;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.saverow.open{display:flex}
+.saverow input{font:15px/1 inherit;padding:9px 10px;border:1.5px solid var(--line);
+  border-radius:9px;width:210px;-webkit-appearance:none}
+.saverow input:focus{outline:none;border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* スロット（縦並び） */
+.slots{margin:12px 0}
+.slot{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;margin-bottom:12px}
+.slot-h{display:flex;align-items:center;gap:6px;padding:7px 10px;background:#fafbfc;
+  border-bottom:1px solid var(--line)}
+.slot-h b{font-size:11px;color:var(--sub);letter-spacing:.05em}
+.cats{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.cats button{font:600 10.5px/1 inherit;padding:5px 8px;border-radius:6px;border:1px solid var(--line);
+  background:#fff;color:var(--sub);cursor:pointer}
+.cats button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.body{display:flex;align-items:stretch}
+.left{width:380px;flex:none;border-right:1px solid var(--line);padding:10px;
+  display:flex;flex-direction:column;justify-content:center;gap:5px}
+@media(max-width:640px){
+  .body{display:block}
+  .left{width:auto;border-right:none;border-bottom:1px solid var(--line)}
+}
+.pick{position:relative}
+.pick .name{font:700 26px/1.3 inherit;color:var(--ink);letter-spacing:-.01em;
+  padding:14px 36px 14px 14px;border:1.5px solid var(--line);border-radius:11px;background:#fff;
+  min-height:76px;display:flex;align-items:center}
+.pick:after{content:"";position:absolute;right:15px;top:50%;margin-top:-3px;
+  border:6px solid transparent;border-top-color:#8d97a3;pointer-events:none}
+.pick select{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;
+  font-size:16px;cursor:pointer;-webkit-appearance:none;appearance:none;border:0;background:none}
+.pick select:focus + .name{border-color:var(--accent)}
+@media(max-width:640px){ .pick .name{font-size:22px;min-height:64px} }
+.subline{font-size:11.5px;color:var(--sub);padding-left:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.res{padding:12px 16px;background:#fcfdfd;flex:1;display:flex;flex-direction:column;
+  justify-content:center;min-width:0}
+.vals{display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap}
+.v{min-width:0}
+.vlab{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.06em;margin-bottom:1px}
+.vnum{font-size:23px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;
+  line-height:38px;white-space:nowrap}
+.vnum.big{font-size:32px;color:var(--accent)}
+.res .big{font-size:32px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
+  line-height:1.1;color:var(--accent)}
+.res .big.none{font-size:16px;color:#9aa6b2;font-weight:600}
+.res .freq{font-size:13px;color:var(--ink);font-weight:700;margin-top:3px}
+.res .det{font-size:11.5px;color:var(--sub);margin-top:7px;line-height:1.55}
+.res .flag{display:inline-block;font-size:10.5px;color:var(--warn);background:var(--warnbg);
+  border-radius:5px;padding:2px 6px;margin-top:7px;align-self:flex-start}
+
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:12px 0;overflow:hidden}
+summary{padding:12px 14px;font-size:13px;font-weight:600;cursor:pointer;color:var(--accent);
+  background:var(--accent2);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:before{content:"▸ ";font-size:11px}
+details[open] summary:before{content:"▾ "}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:10.5px;color:var(--sub);background:#fafbfc;font-weight:700}
+td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
+tr:last-child td{border-bottom:none}
+.cat{font-size:10.5px;color:var(--sub)}
+.author{text-align:center;font-size:11.5px;color:var(--sub);
+  padding:20px 2px 6px;line-height:1.75;letter-spacing:.01em}
+.disc{background:var(--warnbg);border:1px solid #f0dcc2;color:var(--warn);
+  border-radius:10px;padding:9px 12px;font-size:11.5px;margin:12px 0}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <h1>小児薬用量計算アプリ ver1 (2026/9)</h1>
+  </div></header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="toprow">
+      <div class="rlabel">薬剤数</div>
+
+      <div class="cnt" id="cnt">
+        <button data-n="1">1</button>
+        <button data-n="2">2</button>
+        <button data-n="3">3</button>
+        <button data-n="4">4</button>
+        <button data-n="5">5</button>
+      </div>
+
+      <button class="btn" id="clear">クリア</button>
+    </div>
+
+    <div class="inputs">
+      <div class="frow">
+        <span class="flabel">体重</span>
+        <button class="stp" id="wminus" title="1 kg 減らす">−</button>
+        <input id="w" type="number" inputmode="decimal" step="0.1" min="0">
+        <button class="stp" id="wplus" title="1 kg 増やす">＋</button>
+        <span class="unit">kg</span>
+      </div>
+
+      <div class="frow">
+        <span class="flabel">年齢</span>
+        <button class="stp" id="yminus" title="1歳 減らす">−</button>
+        <input id="y" type="number" inputmode="numeric" step="1" min="0">
+        <button class="stp" id="yplus" title="1歳 増やす">＋</button>
+        <span class="unit">歳</span>
+      </div>
+    </div>
+
+    <div id="msg"></div>
+
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="sets">
+    <h3>セット</h3>
+    <div class="chips" id="chips"></div>
+    <div class="saverow" id="saverow">
+      <input id="setname" type="text" placeholder="セット名（例：かぜ 咳あり）" maxlength="24">
+      <button class="btn pri" id="dosave">保存</button>
+      <button class="btn" id="cancelsave">やめる</button>
+    </div>
+  </div>
+
+  <div class="slots" id="slots"></div>
+
+  <div class="disc">処方前に添付文書・ガイドラインで必ず確認してください。</div>
+
+  <details>
+    <summary>全薬剤 一覧（計算結果）</summary>
+    <div style="overflow-x:auto"><table id="alltab"><thead><tr>
+      <th>薬剤</th><th>基準</th><th class="n">成分量</th><th class="n">薬剤量</th><th>用法</th>
+    </tr></thead><tbody></tbody></table></div>
+  </details>
+
+  <footer class="author">
+    Author: Kazuhiro Iwama<br>
+    Department of Pediatrics, Yokohama City University
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* ===================== 薬剤カタログ ===================== */
+/* type: p=体重比(散剤・顆粒)  s=シロップ  t=体重帯早見表  a=年齢区分
+        x=製剤量直接(g/kg)  i=注射(mg)  z=ゾフルーザ規定  f=固定 */
+var DRUGS = [
+ {id:"p_calonal", cat:"散", n:"カロナール細粒 20%", s:"アセトアミノフェン", type:"p", conc:20, dose:10, per:"回", freq:"頓用", ratio:"10 mg/kg/回", max:500, note:"6時間以上あけて"},
+ {id:"s_calonal", cat:"Sy", n:"カロナール Sy 2%", s:"アセトアミノフェン", type:"s", mgml:20, dose:10, per:"回", freq:"頓用", ratio:"10 mg/kg/回", max:500, note:"6時間以上あけて（0.5 mL/kg/回）"},
+ {id:"p_brufen", cat:"散", n:"ブルフェン顆粒 20%", s:"イブプロフェン", type:"p", conc:20, dose:5, per:"回", freq:"頓用", ratio:"5 mg/kg/回", max:200, note:"6時間以上あけて／錠 100・200 mg"},
+ {id:"p_asa_acute", cat:"散", n:"アスピリン 原末（川崎病 急性期）", s:"アセチルサリチル酸", type:"p", conc:100, dose:30, freq:"分3"},
+ {id:"p_asa_conv", cat:"散", n:"アスピリン 原末（川崎病 回復期）", s:"アセチルサリチル酸", type:"p", conc:100, dose:5, freq:"分1"},
+ {id:"p_carbo", cat:"散", n:"ムコダインDS 50%", s:"カルボシステイン", type:"p", conc:50, dose:30, freq:"分3", max:1500, note:"錠 250・500 mg／成人量 1500 mg/日"},
+ {id:"s_muco", cat:"Sy", n:"ムコダイン Sy 5%", s:"カルボシステイン", type:"s", mgml:50, dose:30, freq:"分3", max:1500},
+ {id:"p_mucosal", cat:"散", n:"ムコサールDS 1.5%", s:"アンブロキソール", type:"p", conc:1.5, dose:0.9, freq:"分3", max:45, note:"ムコソルバン／錠 15 mg・成人量 45 mg/日"},
+ {id:"s_mucos", cat:"Sy", n:"ムコソルバン Sy 0.3%", s:"アンブロキソール", type:"s", mgml:3, dose:0.9, freq:"分3", max:45},
+ {id:"p_asv_ds", cat:"散", n:"アスベリンDS 2%", s:"チペピジン・散は10%で濃度注意", type:"p", conc:2, dose:2, freq:"分3", max:120, note:"2-3 mg/kg/日 とする資料もあり／錠 10・20 mg・成人量 120 mg/日"},
+ {id:"p_asv_san", cat:"散", n:"アスベリン散 10%", s:"チペピジン・DSは2%で濃度注意", type:"p", conc:10, dose:2, freq:"分3", max:120, note:"2-3 mg/kg/日 とする資料もあり"},
+ {id:"s_asv", cat:"Sy", n:"アスベリン Sy 0.5%", s:"チペピジン", type:"s", mgml:5, dose:2, freq:"分3", max:120, note:"3 mg/kg/日（0.6 mL/kg/日）とする資料もあり"},
+ {id:"p_medicon", cat:"散", n:"メジコン散 10%", s:"デキストロメトルファン", type:"p", conc:10, dose:1.5, freq:"分3", max:60, note:"錠 15 mg／成人量 60 mg/日"},
+ {id:"p_transa", cat:"散", n:"トランサミン散 50%", s:"トラネキサム酸", type:"p", conc:50, dose:20, freq:"分3", max:750, note:"年齢別1日量の目安　新生児 100・6か月 200・1歳 300・3歳 400・7歳6か月 500・12歳 750 mg/日"},
+ {id:"f_sp", cat:"錠", n:"SPトローチ 0.25 mg", s:"デカリニウム塩化物", type:"f", freq:"6回/日まで", note:"塩化デカリニウム／5歳未満には処方しない", val:"1回 1錠"},
+ {id:"p_meptin", cat:"散", n:"メプチンDS 0.005%", s:"プロカテロール", type:"p", conc:0.005, dose:2.5, unit:"ug", freq:"分2-3", max:0.15, note:"錠 50 µg"},
+ {id:"s_meptin", cat:"Sy", n:"メプチン Sy 0.0005%", s:"プロカテロール", type:"s", mgml:0.005, dose:2.5, unit:"ug", freq:"分2-3", max:0.15},
+ {id:"a_meptin_inh", cat:"外", n:"メプチン 吸入液", s:"プロカテロール", type:"a", rows:[["乳児（1歳未満）", 0, 11, "10 µg", "0.1 mL", ""], ["幼児（1-5歳）", 12, 71, "20 µg", "0.2 mL", ""], ["学童（6歳以上）", 72, 9999, "30 µg", "0.3 mL", ""]]},
+ {id:"p_hoku_ds", cat:"散", n:"ベラチン／ホクナリンDS 0.1%", s:"ツロブテロール", type:"p", conc:0.1, dose:0.04, freq:"分2-3", max:3, note:"錠 1 mg"},
+ {id:"a_hoku_tape", cat:"外", n:"ホクナリンテープ", s:"ツロブテロール", type:"a", rows:[["6か月-2歳11か月", 6, 35, "0.5 mg", "1枚", ""], ["3歳-9歳", 36, 119, "1 mg", "1枚", ""], ["10歳以上", 120, 9999, "2 mg", "1枚", ""]]},
+ {id:"t_ampc", cat:"散", n:"パセトシン／サワシリン 10%", s:"アモキシシリン", type:"p", conc:10, dose:[20,40], freq:"分3-4", max:1000, note:"カプセル・錠 250 mg／成人量 750-1000 mg/日／ワイドシリン20%では半量", rows:[["6", 200, 2, "", "", ""], ["8", 300, 3, "", "", ""], ["10", 400, 4, "", "", ""], ["13", 500, 5, "", "", ""], ["16", 600, 6, "", "", ""], ["20", 750, 7.5, "", "", ""], ["30", 1000, 10, "", "", ""]]},
+ {id:"p_clavamox", cat:"散", n:"クラバモックス小児用DS", s:"アモキシシリン・クラブラン酸", type:"x", gkg:0.15, freq:"分2 食前", ratio:"96.4 mg/kg/日（力価）=  0.15 g/kg/日（製剤量）", maxg:5.6, note:"成人量 3600 mg/日（製剤量 約5.6 g/日）"},
+ {id:"p_keflor", cat:"散", n:"ケフラール細粒 10%", s:"セファクロル", type:"p", conc:10, dose:[20,40], freq:"分3", max:1500, note:"錠 250 mg／成人量 750-1500 mg/日"},
+ {id:"p_meiact", cat:"散", n:"メイアクト細粒 10%", s:"セフジトレン ピボキシル", type:"p", conc:10, dose:[9,18], freq:"分3", max:600, note:"錠 100 mg／成人量 300-600 mg/日（早見表では 9 mg/kg/日）"},
+ {id:"t_cam", cat:"散", n:"クラリスロマイシンDS 10%", s:"クラリスロマイシン", type:"p", conc:10, dose:[10,15], freq:"分2-3", max:400, note:"錠 50・200 mg／成人量 400 mg/日", rows:[["6", 80, 0.8, "", "", ""], ["8", 120, 1.2, "", "", ""], ["10", 150, 1.5, "", "", ""], ["12", 180, 1.8, "", "", ""], ["14", 200, 2, "", "", ""], ["20", 300, 3, "", "", ""], ["27", 400, 4, "", "", ""]]},
+ {id:"p_zithro", cat:"散", n:"ジスロマック細粒 10%", s:"アジスロマイシン", type:"p", conc:10, dose:10, freq:"分1 × 3日間", max:500, note:"錠 100・250 mg／成人量 500 mg/日（3日間）"},
+ {id:"p_ozex", cat:"散", n:"オゼックス細粒 15%", s:"トスフロキサシン", type:"p", conc:15, dose:12, freq:"分2", max:450, note:"錠 75・150 mg／成人量 300-450 mg/日"},
+ {id:"p_mino", cat:"散", n:"ミノマイシン顆粒 2%", s:"ミノサイクリン", type:"p", conc:2, dose:[2,4], freq:"分2", max:200, note:"錠 50・100 mg／成人量 100-200 mg/日"},
+ {id:"p_fosmicin", cat:"散", n:"ホスミシンDS 40%", s:"ホスホマイシン", type:"p", conc:40, dose:[40,120], freq:"分3-4", max:3000, note:"錠 250・500 mg／成人量 2000-3000 mg/日"},
+ {id:"p_tamiflu", cat:"散", n:"タミフルDS 3%", s:"オセルタミビル", type:"p", conc:3, dose:4, freq:"分2 × 5日間", max:150, step:0.01, infant:6, note:"1 Cap = 75 mg／1歳未満は 6 mg/kg/日（2週未満・早産乳児は安全性未確立）／48時間以内に開始"},
+ {id:"a_inavir", cat:"外", n:"イナビル", s:"ラニナミビル", type:"a", rows:[["10歳未満", 0, 119, "20 mg", "1キット", "単回・1回2吸入"], ["10歳以上", 120, 9999, "40 mg", "2キット", "単回・1回4吸入"]]},
+ {id:"f_relenza", cat:"外", n:"リレンザ", s:"ザナミビル", type:"f", freq:"1日2回 × 5日間", note:"5 mg/ブリスター（20ブリスター）／吸入できる5歳以上に・4歳以下は安全性未確立／予防は1日1回10日間", val:"1回 2ブリスター"},
+ {id:"i_rapiacta", cat:"外", n:"ラピアクタ", s:"ペラミビル", type:"i", dose:10, freq:"15分以上かけて単回DIV", max:600, note:"成人量 300 mg（または複数回点滴）"},
+ {id:"z_xofluza", cat:"錠", n:"ゾフルーザ", s:"バロキサビル", type:"c", freq:"分1（単回）", note:"48時間以内に開始／錠 10・20 mg", rows:[["12歳以上・80 kg以上", 144, 9999, 80, null, "80 mg", "20 mg錠 4錠", "分1（単回）"], ["12歳以上・80 kg未満", 144, 9999, null, 80, "40 mg", "20 mg錠 2錠", "分1（単回）"], ["12歳未満・40 kg以上", 0, 143, 40, null, "40 mg", "20 mg錠 2錠", "分1（単回）"], ["12歳未満・20-40 kg", 0, 143, 20, 40, "20 mg", "20 mg錠 1錠", "分1（単回）"], ["12歳未満・20 kg未満", 0, 143, null, 20, "10 mg", "10 mg錠 1錠", "分1（単回）"]]},
+ {id:"z_xocova", cat:"錠", n:"ゾコーバ", s:"エンシトレルビル", type:"c", freq:"分1 × 5日間", note:"ゾコーバ錠 25mg・125 mg／2日目以降は用量変更／20 kg未満は対象外", rows:[["12歳以上", 144, 9999, null, null, "375 mg", "", "1日目 375 mg 分1・2-5日目は 125 mg 分1"], ["6歳以上12歳未満・40 kg以上", 72, 143, 40, null, "375 mg", "", "1日目 375 mg 分1・2-5日目は 125 mg 分1"], ["6歳以上12歳未満・30-40 kg", 72, 143, 30, 40, "250 mg", "", "1日目 250 mg 分1・2-5日目は 125 mg 分1"], ["6歳以上12歳未満・20-30 kg", 72, 143, 20, 30, "150 mg", "", "1日目 150 mg 分1・2-5日目は 75 mg 分1"]]},
+ {id:"x_maoto", cat:"散", n:"麻黄湯エキス顆粒", s:"漢方エキス製剤", type:"x", gkg:0.2, freq:"分2-3 食前or食間", ratio:"0.2 g/kg/日（製剤量）", maxg:7.5, note:"成人量 7.5g/日"},
+ {id:"p_zovirax", cat:"散", n:"ゾビラックス顆粒 40%", s:"アシクロビル", type:"p", conc:40, dose:80, freq:"分4", max:3200, note:"錠 200・400 mg／成人量 3200 mg/日"},
+ {id:"p_valtrex", cat:"散", n:"バルトレックス顆粒 50%", s:"バラシクロビル", type:"p", conc:50, dose:75, freq:"分3", max:3000, step:0.01, note:"錠 500 mg／成人量 3000 mg/日"},
+ {id:"p_peri", cat:"散", n:"ペリアクチン散 1%", s:"シプロヘプタジン", type:"p", conc:1, dose:0.3, freq:"分3", max:12, note:"錠 4 mg"},
+ {id:"s_peri", cat:"Sy", n:"ペリアクチン Sy 0.04%", s:"シプロヘプタジン", type:"s", mgml:0.4, dose:0.24, freq:"分3", max:12},
+ {id:"p_pola", cat:"散", n:"ポララミン散 1%", s:"d-クロルフェニラミン", type:"p", conc:1, dose:0.15, freq:"分1-4", max:6, note:"錠 2 mg"},
+ {id:"s_pola", cat:"Sy", n:"ポララミン Sy 0.04%", s:"d-クロルフェニラミン", type:"s", mgml:0.4, dose:0.16, freq:"分1-4", max:6, note:"0.15 mg/kg/日 とする資料もあり"},
+ {id:"p_zaditen", cat:"散", n:"ザジテンDS 0.1%", s:"ケトチフェン", type:"p", conc:0.1, dose:0.06, freq:"分2", max:2, note:"Cap 1 mg／成人量 2 mg/日"},
+ {id:"p_zesulan", cat:"散", n:"ゼスラン細粒 0.6%", s:"メキタジン", type:"p", conc:0.6, dose:0.12, freq:"分2", max:12, note:"錠 3 mg／成人量 12 mg/日"},
+ {id:"p_epina", cat:"散", n:"アレジオンDS 1%", s:"エピナスチン", type:"p", conc:1, dose:0.25, freq:"分1", max:20, note:"0.25-0.5 mg/kg/日／錠 10 mg・成人量 20 mg/日"},
+ {id:"a_zyrtec_ds", cat:"散", n:"ジルテックDS 1.25%", s:"セチリジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "0.4 g", "分2"], ["7歳-15歳", 84, 191, "10 mg", "0.8 g", "分2"]]},
+ {id:"a_zyrtec_tab", cat:"錠", n:"ジルテック錠 5 mg", s:"セチリジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "5 mg錠 1錠", "分2"], ["7歳-15歳", 84, 191, "10 mg", "5 mg錠 2錠", "分2"]]},
+ {id:"a_allelock", cat:"錠", n:"アレロック錠 2.5・5 mg", s:"オロパタジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "2.5 mg錠 2錠", "分2"], ["7歳以上", 84, 9999, "10 mg", "5 mg錠 2錠", "分2"]]},
+ {id:"a_claritin", cat:"錠", n:"クラリチン錠 10 mg", s:"ロラタジン", type:"a", rows:[["3歳-7歳未満", 36, 83, "5 mg", "10 mg錠 0.5錠", "分1"], ["7歳以上", 84, 9999, "10 mg", "10 mg錠 1錠", "分1"]]},
+ {id:"a_allegra_ds", cat:"散", n:"フェキソフェナジンDS 5%", s:"フェキソフェナジン", type:"a", rows:[["6か月-2歳未満", 6, 23, "30 mg", "0.6 g", "分2"], ["2歳-7歳未満", 24, 83, "60 mg", "1.2 g", "分2"], ["7歳-12歳未満", 84, 143, "60 mg", "1.2 g", "分2"], ["12歳以上", 144, 9999, "120 mg", "2.4 g", "分2"]]},
+ {id:"a_allegra_tab", cat:"錠", n:"アレグラ錠 30・60 mg", s:"フェキソフェナジン", type:"a", rows:[["7歳-12歳未満", 84, 143, "60 mg", "30 mg錠 2錠", "分2"], ["12歳以上", 144, 9999, "120 mg", "60 mg錠 2錠", "分2"]]},
+ {id:"a_xyzal_sy", cat:"Sy", n:"ザイザル Sy 0.05%", s:"レボセチリジン", type:"a", rows:[["6か月-1歳未満", 6, 11, "1.25 mg", "2.5 mL", "分1"], ["1歳-7歳未満", 12, 83, "2.5 mg", "5 mL", "分2"], ["7歳-15歳未満", 84, 179, "5 mg", "10 mL", "分2"]]},
+ {id:"a_xyzal_tab", cat:"錠", n:"ザイザルOD錠 2.5・5 mg", s:"レボセチリジン", type:"a", rows:[["7歳-15歳", 84, 191, "5 mg", "5 mg錠 1錠", "分2"]]},
+ {id:"a_levoceti", cat:"散", n:"レボセチリジンDS 0.5%", s:"レボセチリジン", type:"a", rows:[["6か月-1歳未満", 6, 11, "1.25 mg", "0.25 g", "分1"], ["1歳-7歳未満", 12, 83, "2.5 mg", "0.5 g", "分2"], ["7歳以上", 84, 9999, "5 mg", "1.0 g", "分2"]]},
+ {id:"a_kipres", cat:"散", n:"キプレス／シングレア", s:"モンテルカスト", type:"a", rows:[["1歳-5歳", 12, 71, "4 mg", "細粒 1包", "分1 寝る前"], ["6歳以上", 72, 9999, "5 mg", "チュアブル錠 1錠", "分1 寝る前"]]},
+ {id:"t_onon", cat:"散", n:"オノンDS 10%", s:"プランルカスト", type:"p", conc:10, dose:7, freq:"分2", max:225, note:"1 Cap = 112.5 mg／成人量 2 Cap 分2（225 mg）", rows:[["6", 40, 0.4, "", "", ""], ["8", 50, 0.5, "", "", ""], ["10", 70, 0.7, "", "", ""], ["12", 80, 0.8, "", "", ""], ["13", 90, 0.9, "", "", ""], ["15", 100, 1, "", "", ""], ["18", 120, 1.2, "", "", ""], ["20", 140, 1.4, "", "", ""], ["23", 160, 1.6, "", "", ""], ["26", 180, 1.8, "", "", ""], ["30", 210, 2.1, "", "", ""], ["32.1", 225, 2.25, "", "", ""]]},
+ {id:"s_rinde", cat:"Sy", n:"リンデロン Sy 0.01%", s:"ベタメタゾン", type:"s", mgml:0.1, dose:0.1, freq:"分1-2", max:8},
+ {id:"s_deca", cat:"Sy", n:"デカドロンエリキシル 0.01%", s:"デキサメタゾン", type:"s", mgml:0.1, dose:0.1, freq:"分1-2", max:20},
+ {id:"p_nauze", cat:"散", n:"ナウゼリンDS 1%", s:"ドンペリドン", type:"p", conc:1, dose:1, freq:"分3", max:30},
+ {id:"f_calamine", cat:"外", n:"カチリ 20 g", s:"フェノール・亜鉛華リニメント・水痘の発疹", type:"f", val:"外用"},
+ {id:"c_diap", cat:"坐", n:"ダイアップ坐剤", s:"ジアゼパム", type:"c", freq:"発熱時・8時間後に追加", ratio:"0.4-0.5 mg/kg/回", note:"けいれん予防／発熱時に1個挿入し、発熱が続けば8時間後に追加／坐剤 4・6・10 mg／4 kg未満は表外", rows:[["4 kg以上6 kg未満", 0, 9999, 4, 6, "2 mg", "4 mg 坐剤 1/2個", ""], ["6 kg以上8 kg未満", 0, 9999, 6, 8, "約2.7 mg", "4 mg 坐剤 2/3個", ""], ["8 kg以上13 kg未満", 0, 9999, 8, 13, "4 mg", "4 mg 坐剤 1個", ""], ["13 kg以上20 kg未満", 0, 9999, 13, 20, "6 mg", "6 mg 坐剤 1個", ""], ["20 kg以上", 0, 9999, 20, null, "10 mg", "10 mg 坐剤 1個", ""]]},
+ {id:"c_calonal", cat:"坐", n:"アンヒバ坐剤", s:"アセトアミノフェン", type:"c", per:"回", freq:"頓用", ratio:"10-15 mg/kg/回", note:"坐剤 50・100・200 mg", rows:[["4 kg以上6 kg未満", 0, 9999, 4, 6, "50 mg", "100 mg 坐剤 1/2個", ""], ["6 kg以上8 kg未満", 0, 9999, 6, 8, "約67 mg", "100 mg 坐剤 2/3個", ""], ["8 kg以上11 kg未満", 0, 9999, 8, 11, "100 mg", "100 mg 坐剤 1個", ""], ["11 kg以上14 kg未満", 0, 9999, 11, 14, "約133 mg", "200 mg 坐剤 2/3個", ""], ["14 kg以上16 kg未満", 0, 9999, 14, 16, "150 mg", "200 mg 坐剤 3/4個", ""], ["16 kg以上", 0, 9999, 16, null, "200 mg", "200 mg 坐剤 1個", ""]]},
+ {id:"a_carbo", cat:"錠", n:"カルボシステイン錠 250mg", s:"カルボシステイン", type:"c", max:1500, note:"錠 250・500 mg／成人量 1500 mg/日", rows:[["25-37 kg", 0, 9999, 25, 38, "750 mg", "250 mg錠 3錠", "分3"], ["38-44 kg", 0, 9999, 38, 45, "1000 mg", "250 mg錠 4錠", "分2"], ["45 kg以上", 0, 9999, 45, null, "1500 mg", "250 mg錠 6錠", "分3"]]},
+ {id:"a_mucos", cat:"錠", n:"ムコソルバン錠 15mg", s:"アンブロキソール", type:"c", max:45, note:"錠 15 mg／成人量 45 mg/日", rows:[["25-37 kg", 0, 9999, 25, 38, "30 mg", "15 mg錠 2錠", "分2"], ["38 kg以上", 0, 9999, 38, null, "45 mg", "15 mg錠 3錠", "分3"]]},
+ {id:"a_transa", cat:"錠", n:"トランサミン錠 250mg", s:"トラネキサム酸", type:"c", max:750, note:"錠 250 mg／成人量 750 mg/日", rows:[["25-30 kg", 0, 9999, 25, 30, "500 mg", "250 mg錠 2錠", "分2"], ["30 kg以上", 0, 9999, 30, null, "750 mg", "250 mg錠 3錠", "分3"]]},
+ {id:"a_asv_san", cat:"錠", n:"アスベリン錠 10mg", s:"チペピジン", type:"c", max:120, note:"錠 10・20 mg／成人量 60 mg/日", rows:[["25 kg以上", 0, 9999, 25, null, "30 mg", "10 mg錠 3錠", "分3"]]},
+ {id:"a_medicon", cat:"錠", n:"メジコン錠 15mg", s:"デキストロメトルファン", type:"c", max:120, note:"錠 15 mg／成人量 120 mg/日", rows:[["30 kg以上", 0, 9999, 30, null, "45 mg", "15 mg錠 3錠", "分3"]]}
+];
+
+var PRESETS = [
+ {name:"頻用薬", ids:["p_carbo", "p_mucosal", "p_asv_ds", "p_transa", "p_calonal"]},
+ {name:"頻用薬-錠", ids:["a_carbo", "a_mucos", "a_asv_san", "a_transa", "a_medicon"]},
+ {name:"シロップ", ids:["s_muco", "s_mucos", "s_asv", "s_meptin", "a_xyzal_sy"]},
+ {name:"Flu・COVID", ids:["p_tamiflu", "a_inavir", "f_relenza", "z_xofluza", "z_xocova"]},
+ {name:"水痘", ids:["p_zovirax", "p_valtrex", "f_calamine"]},
+ {name:"H1AH-粉", ids:["p_epina", "a_zyrtec_ds", "a_levoceti", "a_allegra_ds", "p_pola"]},
+ {name:"H1AH-錠", ids:["a_allegra_tab", "a_zyrtec_tab", "a_allelock", "a_claritin", "a_xyzal_tab"]},
+ {name:"抗菌薬", ids:["t_ampc", "p_clavamox", "p_meiact", "t_cam", "p_ozex"]},
+ {name:"喘息", ids:["t_onon", "a_kipres", "p_meptin", "a_hoku_tape", "s_rinde"]},
+ {name:"坐薬", ids:["c_diap", "c_calonal"]}
+];
+
+var CATS = [["all","全"],["散","散"],["Sy","Sy"],["錠","錠"],["坐","坐"],["外","外"]];
+
+/* 年齢別の平均体重（男女平均・kg）。空欄の自動補完に使用 */
+var AVG_W = [7.5,10.0,12.5,14.5,16.5,18.5,21.5,24.0,27.0,30.5,34.5,39.0,44.0,48.5,52.5,56.0];
+function estWeight(Y){ if(Y<0) Y=0; return (Y>=AVG_W.length) ? AVG_W[AVG_W.length-1] : AVG_W[Y]; }
+function estAge(W){ var best=0,bd=1e9,i,dd;
+  for(i=0;i<AVG_W.length;i++){ dd=Math.abs(AVG_W[i]-W); if(dd<bd){bd=dd;best=i;} }
+  return best; }
+
+/* ===================== 計算 ===================== */
+function fix(v,d){ var x = Math.round(v*Math.pow(10,d))/Math.pow(10,d); return x.toFixed(d); }
+function trimZero(s){ if(s.indexOf(".")<0) return s;
+  s = s.replace(/0+$/,""); if(s.charAt(s.length-1)===".") s = s.slice(0,-1); return s; }
+function floorTo(v,step){ return Math.floor((v+1e-9)/step)*step; }
+function roundG(g,step){
+  if(step) return fix(floorTo(g,step), step<0.1?2:1);
+  if(g>=0.1) return fix(floorTo(g,0.1),1);
+  if(g>=0.01) return fix(floorTo(g,0.01),2);
+  return fix(g,3);
+}
+function roundML(ml){ return ml>=5 ? fix(floorTo(ml,1),0) : fix(floorTo(ml,0.5),1); }
+
+/* 年齢は「歳」入力。Y歳 = Y*12 〜 Y*12+11 か月 として区分に当てる */
+function ageHit(rows, Y){
+  var lo = Y*12, hi = Y*12+11, i;
+  for(i=0;i<rows.length;i++) if(lo<=rows[i][2] && hi>=rows[i][1]) return i;
+  return -1;
+}
+
+function calcOne(d, perKg, W){
+  var mg = perKg*W;
+  if(d.unit==="ug") mg = mg/1000;
+  var capped = false;
+  if(d.max && mg>d.max){ mg = d.max; capped = true; }
+  return {mg:mg, g:mg/(d.conc*10), capped:capped};
+}
+
+/* 返り値 {big, freq, det, flag, none} */
+function calc(d, W, Y){
+  if(!d) return {big:"—", freq:"", det:"", flag:"", none:true};
+  var i, r;
+
+  if(d.type==="p"){
+    var isInfant = (Y!==null && Y<1);
+    var dv = (typeof d.dose.length==="number") ? (d.dose[0]+"-"+d.dose[1]) : d.dose;
+    var ratio = d.ratio || (dv+(d.unit==="ug"?" µg":" mg")+"/kg/"+(d.per==="回"?"回":"日"));
+    if(d.infant && isInfant) ratio = d.infant+" mg/kg/日（1歳未満）";
+    if(W===null) return {big:"体重を入力", freq:d.freq, det:ratio, flag:"", none:true};
+    var per = (d.infant && isInfant) ? d.infant : d.dose;
+    if(typeof per.length === "number"){
+      var lo = calcOne(d, per[0], W), hi = calcOne(d, per[1], W);
+      return {amt: trimZero(fix(lo.mg,2))+" – "+trimZero(fix(hi.mg,2))+" mg",
+        big: roundG(lo.g,d.step)+" – "+roundG(hi.g,d.step)+" g", freq:d.freq,
+        det: ratio+"　／　計算値 "+trimZero(fix(lo.g,3))+" – "+trimZero(fix(hi.g,3))+" g"
+            +(d.note?"\n"+d.note:""),
+        flag: hi.capped ? "上限側は成人量に達しています" : ""};
+    }
+    var one = calcOne(d, per, W);
+    var mg = one.mg, capped = one.capped, g = one.g;
+    var amt = (d.unit==="ug") ? trimZero(fix(mg*1000,1))+" µg" : trimZero(fix(mg,2))+" mg";
+    var det = ratio+"　／　計算値 "+trimZero(fix(g,3))+" g";
+    if(d.id==="p_tamiflu") det += "　／　"+trimZero(fix(mg/75,2))+" Cap";
+    if(d.id==="p_valtrex") det += "　／　"+trimZero(fix(mg/500,2))+" 錠";
+    if(d.note) det += "\n"+d.note;
+    return {amt:amt, big: roundG(g,d.step)+" g"+(d.per==="回"?"/回":""), freq:d.freq,
+            det:det, flag: capped?"成人量の上限に達しています":""};
+  }
+
+  if(d.type==="s"){
+    var rt = d.ratio || ((d.unit==="ug"? d.dose+" µg":d.dose+" mg")+"/kg/日");
+    if(W===null) return {big:"体重を入力", freq:d.freq, det:rt, flag:"", none:true};
+    var mg2 = d.dose*W;
+    if(d.unit==="ug") mg2 = mg2/1000;
+    var cap2 = false;
+    if(d.max && mg2>d.max){ mg2 = d.max; cap2 = true; }
+    var ml = mg2/d.mgml;
+    var amt2 = (d.unit==="ug") ? trimZero(fix(mg2*1000,1))+" µg" : trimZero(fix(mg2,3))+" mg";
+    var det2 = rt+"　／　計算値 "+trimZero(fix(ml,2))+" mL";
+    if(d.note) det2 += "\n"+d.note;
+    return {amt:amt2, big: roundML(ml)+" mL"+(d.per==="回"?"/回":""), freq:d.freq,
+            det:det2, flag: cap2?"成人量の上限に達しています":""};
+  }
+
+  if(d.type==="t"){
+    if(W===null) return {big:"体重を入力", freq:d.freq, det:d.ratio+"　／　"+d.note, flag:"", none:true};
+    var hit = -1;
+    for(i=0;i<d.rows.length;i++){ if(W>=d.rows[i][0]) hit = i; }
+    if(hit<0) return {big:"表の範囲外", freq:d.freq, none:true,
+      det:"最小 "+d.rows[0][0]+" kg から。"+d.ratio+" で個別に計算してください。", flag:""};
+    r = d.rows[hit];
+    var disp = (Math.round(r[2]*100)%10===0) ? fix(r[2],1) : fix(r[2],2);
+    return {amt: r[1]+" mg", big: disp+" g", freq:d.freq,
+      det:"体重 ≧ "+r[0]+" kg の行　／　"+d.ratio+"\n"+d.note,
+      flag: (hit===d.rows.length-1) ? "成人量（上限）です" : ""};
+  }
+
+  if(d.type==="a"){
+    if(Y===null) return {big:"年齢を入力", freq:"", det:"", flag:"", none:true};
+    var k = ageHit(d.rows, Y);
+    if(k>=0){
+      r = d.rows[k];
+      var note = r[0]+" の区分";
+      if(r[1]>0 && Y*12 < r[1]) note += "（" + r[0].split("-")[0] + " からが対象）";
+      if(!r[4]) return {biglab:"成分量", big:r[3], freq:r[5]||"", det:note, flag:""};
+      return {amt:r[3], big:r[4], freq:r[5]||"", det:note, flag:""};
+    }
+    var lines = [];
+    for(i=0;i<d.rows.length;i++) lines.push(d.rows[i][0]+"：" + (d.rows[i][4]||d.rows[i][3]));
+    return {big:"年齢区分外", freq:"", det:lines.join("　／　"), flag:"添付文書の年齢区分を確認", none:true};
+  }
+
+  if(d.type==="x"){
+    if(W===null) return {big:"体重を入力", freq:d.freq, det:d.ratio, flag:"", none:true};
+    var gx = d.gkg*W, capx = false;
+    if(d.maxg && gx > d.maxg){ gx = d.maxg; capx = true; }
+    return {big: trimZero(fix(gx,2))+" g", freq:d.freq,
+            det:d.ratio+"　／　計算値 "+trimZero(fix(d.gkg*W,3))+" g"+(d.note?"\n"+d.note:""),
+            flag: capx?"成人量の上限に達しています":""};
+  }
+
+  if(d.type==="i"){
+    if(W===null) return {big:"体重を入力", freq:d.freq,
+      det:d.dose+" mg/kg（最大 "+d.max+" mg）", flag:"", none:true};
+    var mgi = d.dose*W, capi = false;
+    if(d.max && mgi>d.max){ mgi = d.max; capi = true; }
+    return {biglab:"投与量", big: trimZero(fix(mgi,1))+" mg", freq:d.freq,
+      det:d.dose+" mg/kg（最大 "+d.max+" mg）"+(d.note?"\n"+d.note:""),
+      flag: capi?"最大量に達しています":""};
+  }
+
+  if(d.type==="c"){
+    var needAge = false, needW = false;
+    for(i=0;i<d.rows.length;i++){
+      if(d.rows[i][1]>0 || d.rows[i][2]<9999) needAge = true;
+      if(d.rows[i][3]!==null || d.rows[i][4]!==null) needW = true;
+    }
+    if((needW && W===null) || (needAge && Y===null)){
+      var ls = [];
+      for(i=0;i<d.rows.length;i++) ls.push(d.rows[i][0]+"：" + (d.rows[i][6]||d.rows[i][5]));
+      return {big:(needW&&needAge)?"体重と年齢を入力":(needW?"体重を入力":"年齢を入力"),
+              freq:d.freq, none:true, flag:"", det:ls.join("　／　")};
+    }
+    var lo2 = (Y===null?0:Y*12), hi2 = (Y===null?9999:Y*12+11);
+    for(i=0;i<d.rows.length;i++){
+      r = d.rows[i];
+      var okAge = (!needAge) || (lo2 <= r[2] && hi2 >= r[1]);
+      var okW = (r[3]===null || (W!==null && W>=r[3])) && (r[4]===null || (W!==null && W<r[4]));
+      if(okAge && okW){
+        var cdet = r[0]+" の区分"+(d.note?"\n"+d.note:"");
+        if(!r[6]) return {biglab:"成分量", big:r[5], freq:r[7]||d.freq||"", det:cdet, flag:""};
+        return {amt:r[5], big:r[6], freq:r[7]||d.freq||"", det:cdet, flag:""};
+      }
+    }
+    var ls2 = [];
+    for(i=0;i<d.rows.length;i++) ls2.push(d.rows[i][0]+"：" + (d.rows[i][6]||d.rows[i][5]));
+    return {big:"区分外", freq:"", none:true, det:ls2.join("　／　"), flag:"添付文書の区分を確認"};
+  }
+
+  return {biglab:"用量", big:d.val, freq:d.freq, det:d.note||"", flag:""};
+}
+
+/* ===================== 状態 ===================== */
+var byId = {};
+for (var k=0;k<DRUGS.length;k++) byId[DRUGS[k].id] = DRUGS[k];
+
+var slotCount = 2;
+var MAXSLOT = 5;
+var slotDrug  = ["p_carbo","p_mucosal","p_calonal","p_asv_ds","p_meptin"];
+var slotCat   = ["all","all","all","all","all"];
+var userSets  = [];
+var autoW = false, autoY = false;
+var ITEM_H    = 44;
+
+function $(s){ return document.querySelector(s); }
+function el(t,c){ var e=document.createElement(t); if(c) e.className=c; return e; }
+
+function store(){ try{ return window.localStorage; }catch(e){ return null; } }
+function loadSets(){
+  var s = store(); if(!s) return;
+  try{ var raw = s.getItem("pedDoseSets");
+       if(raw){ var v = JSON.parse(raw); if(v && v.length) userSets = v; } }catch(e){}
+}
+function saveSets(){
+  var s = store(); if(!s){ flash("このブラウザでは保存できません（今回のみ有効）", true); return; }
+  try{ s.setItem("pedDoseSets", JSON.stringify(userSets)); }
+  catch(e){ flash("保存できませんでした", true); }
+}
+
+function state(){
+  var w = parseFloat($("#w").value);
+  var y = parseInt($("#y").value,10);
+  return {
+    W: (!isNaN(w) && w>0) ? w : null,
+    Y: (!isNaN(y) && y>=0) ? y : null
+  };
+}
+
+/* 片方が空なら平均値で補完 */
+function autofill(changed){
+  var wEl = $("#w"), yEl = $("#y");
+  var w = parseFloat(wEl.value), y = parseInt(yEl.value,10);
+  var hasW = (!isNaN(w) && w>0), hasY = (!isNaN(y) && y>=0);
+  if(changed==="w"){
+    autoW = false;
+    if(hasW){ if(!hasY || autoY){ yEl.value = estAge(w); autoY = true; } }
+    else if(autoY){ yEl.value = ""; autoY = false; }
+  }else{
+    autoY = false;
+    if(hasY){ if(!hasW || autoW){ wEl.value = estWeight(y); autoW = true; } }
+    else if(autoW){ wEl.value = ""; autoW = false; }
+  }
+  wEl.className = autoW ? "auto" : "";
+  yEl.className = autoY ? "auto" : "";
+}
+
+var flashTimer = null;
+function flash(t, isErr){
+  var m = $("#msg"); m.textContent = t; m.className = isErr ? "err" : "";
+  if(flashTimer) clearTimeout(flashTimer);
+  flashTimer = setTimeout(showSummary, 2600);
+}
+function showSummary(){
+  var st = state(), p = [];
+  if(st.W!==null) p.push(trimZero(fix(st.W,1))+" kg"+(autoW?'<span class="est">（推定）</span>':""));
+  if(st.Y!==null) p.push(st.Y+" 歳"+(autoY?'<span class="est">（推定）</span>':""));
+  var m = $("#msg"); m.className = "";
+  if(p.length) m.innerHTML = p.join('<span class="est">　/　</span>');
+  else m.innerHTML = '<span class="est">体重または年齢を入力してください</span>';
+}
+
+/* ===================== スロット ===================== */
+function listFor(cat){
+  var out = [], i;
+  for(i=0;i<DRUGS.length;i++) if(cat==="all" || DRUGS[i].cat===cat) out.push(DRUGS[i]);
+  return out;
+}
+
+function buildSlots(){
+  var host = $("#slots");
+  host.innerHTML = "";
+  for(var i=0;i<slotCount;i++) host.appendChild(buildSlot(i));
+  renderResults();
+}
+
+function buildSlot(i){
+  var slot = el("div","slot");
+
+  var h = el("div","slot-h");
+  var b = el("b"); b.textContent = "薬剤 "+(i+1); h.appendChild(b);
+  var cats = el("div","cats");
+  for(var c=0;c<CATS.length;c++){
+    (function(code,label){
+      var btn = el("button");
+      btn.textContent = label;
+      if(slotCat[i]===code) btn.className = "on";
+      btn.onclick = function(){ slotCat[i] = code; buildSlots(); };
+      cats.appendChild(btn);
+    })(CATS[c][0],CATS[c][1]);
+  }
+  h.appendChild(cats); slot.appendChild(h);
+
+  var body = el("div","body");
+  var left = el("div","left");
+
+  var pick = el("div","pick");
+  var sel = el("select"); sel.id = "sel"+i;
+
+  var list = listFor(slotCat[i]), cur = 0;
+  for(var d=0;d<list.length;d++){
+    var op = document.createElement("option");
+    op.value = list[d].id; op.textContent = list[d].n;
+    if(list[d].id===slotDrug[i]) cur = d;
+    sel.appendChild(op);
+  }
+  if(list.length) slotDrug[i] = list[cur].id;
+  sel.selectedIndex = cur;
+  var nm = el("div","name"); nm.id = "name"+i;
+  sel.onchange = function(){ slotDrug[i] = sel.value; renderResults(); };
+
+  pick.appendChild(sel); pick.appendChild(nm);
+  left.appendChild(pick);
+
+  var sub = el("div","subline"); sub.id = "sub"+i;
+  left.appendChild(sub);
+
+  body.appendChild(left);
+  var res = el("div","res"); res.id = "res"+i;
+  body.appendChild(res);
+  slot.appendChild(body);
+  return slot;
+}
+
+function updateSub(i){
+  var host = document.getElementById("sub"+i); if(!host) return;
+  var d = byId[slotDrug[i]], parts = [];
+  var nm = document.getElementById("name"+i);
+  if(nm) nm.textContent = d ? d.n : "";
+  if(d){
+    if(d.s) parts.push(d.s);
+    parts.push(basisOf(d));
+    if(d.freq) parts.push(d.freq);
+  }
+  host.textContent = parts.join("　/　");
+}
+
+function renderResults(){
+  var st = state();
+  for(var i=0;i<slotCount;i++){
+    updateSub(i);
+    var host = document.getElementById("res"+i); if(!host) continue;
+    var r = calc(byId[slotDrug[i]], st.W, st.Y);
+    var html;
+    if(r.none){
+      html = '<div class="big none">'+r.big+'</div>';
+    }else{
+      html = '<div class="vals">';
+      if(r.amt) html += '<div class="v"><div class="vlab">成分量</div><div class="vnum">'+r.amt+'</div></div>';
+      html += '<div class="v"><div class="vlab">'+(r.biglab||"薬剤量")+'</div><div class="vnum big">'+r.big+'</div></div>';
+      html += '</div>';
+    }
+    if(r.freq) html += '<div class="freq">'+r.freq+'</div>';
+    if(r.det)  html += '<div class="det">'+String(r.det).replace(/\n/g,"<br>")+'</div>';
+    if(r.flag) html += '<div class="flag">'+r.flag+'</div>';
+    host.innerHTML = html;
+  }
+  renderAll(st);
+}
+
+function basisOf(d){
+  if(d.ratio) return d.ratio;
+  if(d.type==="p"||d.type==="s"){
+    var u = (d.unit==="ug")?" µg":" mg";
+    var v = (typeof d.dose.length==="number") ? (d.dose[0]+"-"+d.dose[1]) : d.dose;
+    return v+u+"/kg/"+(d.per==="回"?"回":"日");
+  }
+  if(d.type==="i") return d.dose+" mg/kg";
+  if(d.type==="t") return "体重帯 早見表";
+  if(d.type==="a") return "年齢区分";
+  if(d.type==="c") return "年齢・体重区分";
+  return "定量";
+}
+
+function renderAll(st){
+  var tb = $("#alltab").getElementsByTagName("tbody")[0];
+  tb.innerHTML = "";
+  for(var i=0;i<DRUGS.length;i++){
+    var d = DRUGS[i], r = calc(d, st.W, st.Y), tr = el("tr");
+    tr.innerHTML = '<td>'+d.n+(d.s?' <span class="cat">'+d.s+'</span>':'')+'</td>'
+      + '<td class="cat">'+basisOf(d)+'</td>'
+      + '<td class="n">'+((r.none||!r.amt)?"—":r.amt)+'</td>'
+      + '<td class="n">'+(r.none?"—":r.big)+'</td>'
+      + '<td class="cat">'+(r.freq||d.freq||"")+'</td>';
+    tb.appendChild(tr);
+  }
+}
+
+/* ===================== セット ===================== */
+function renderChips(){
+  var host = $("#chips"); host.innerHTML = ""; var i;
+  for(i=0;i<PRESETS.length;i++) host.appendChild(makeChip(PRESETS[i], false, i));
+  for(i=0;i<userSets.length;i++) host.appendChild(makeChip(userSets[i], true, i));
+  var add = el("button","chip");
+  add.style.borderStyle = "dashed";
+  add.innerHTML = "＋ 現在の組合せを登録";
+  add.onclick = function(){ $("#saverow").className = "saverow open"; $("#setname").focus(); };
+  host.appendChild(add);
+}
+function makeChip(set, isUser, idx){
+  var c = el("button","chip"+(isUser?" user":""));
+  var label = el("span"); label.textContent = set.name+"（"+set.ids.length+"）";
+  c.appendChild(label);
+  c.onclick = function(){ applySet(set); };
+  if(isUser){
+    var x = el("span","x"); x.textContent = "×";
+    x.onclick = function(ev){
+      ev.stopPropagation();
+      userSets.splice(idx,1); saveSets(); renderChips();
+      flash("「"+set.name+"」を削除しました");
+    };
+    c.appendChild(x);
+  }
+  return c;
+}
+function applySet(set, silent){
+  var n = set.ids.length; if(n<1) n = 1; if(n>MAXSLOT) n = MAXSLOT;
+  slotCount = n;
+  for(var i=0;i<MAXSLOT;i++){
+    if(set.ids[i]) slotDrug[i] = set.ids[i];
+    slotCat[i] = "all";
+  }
+  setCntButtons(); buildSlots();
+  if(!silent) flash("「"+set.name+"」を読み込み");
+}
+function setCntButtons(){
+  var bs = $("#cnt").getElementsByTagName("button");
+  for(var i=0;i<bs.length;i++)
+    bs[i].className = (parseInt(bs[i].getAttribute("data-n"),10)===slotCount) ? "on" : "";
+}
+
+/* ===================== 初期化 ===================== */
+loadSets();
+renderChips();
+setCntButtons();
+if(PRESETS.length) applySet(PRESETS[0], true);
+else buildSlots();
+showSummary();
+
+function selectAllOnFocus(el){
+  var pick = function(){ setTimeout(function(){ try{ el.select(); }catch(e){} }, 0); };
+  el.addEventListener("focus", pick);
+  el.addEventListener("click", pick);
+}
+selectAllOnFocus($("#w"));
+selectAllOnFocus($("#y"));
+
+$("#w").addEventListener("input", function(){ autofill("w"); renderResults(); showSummary(); });
+$("#y").addEventListener("input", function(){ autofill("y"); renderResults(); showSummary(); });
+
+function bumpWeight(delta){
+  var wEl = $("#w"), v = parseFloat(wEl.value);
+  if(isNaN(v) || v<=0) v = 10; else v = v + delta;
+  if(v < 1) v = 1;
+  if(v > 120) v = 120;
+  wEl.value = trimZero(fix(v,1));
+  autofill("w"); renderResults(); showSummary();
+}
+function bumpAge(delta){
+  var yEl = $("#y"), v = parseInt(yEl.value,10);
+  if(isNaN(v)) v = 3; else v = v + delta;
+  if(v < 0) v = 0;
+  if(v > 18) v = 18;
+  yEl.value = v;
+  autofill("y"); renderResults(); showSummary();
+}
+$("#wminus").onclick = function(){ bumpWeight(-1); };
+$("#wplus").onclick  = function(){ bumpWeight(1); };
+$("#yminus").onclick = function(){ bumpAge(-1); };
+$("#yplus").onclick  = function(){ bumpAge(1); };
+
+$("#clear").onclick = function(){
+  $("#w").value=""; $("#y").value="";
+  autoW = false; autoY = false;
+  $("#w").className=""; $("#y").className="";
+  renderResults(); showSummary(); $("#w").focus();
+};
+var cbs = $("#cnt").getElementsByTagName("button");
+for(var z=0;z<cbs.length;z++){
+  (function(btn){
+    btn.onclick = function(){
+      slotCount = parseInt(btn.getAttribute("data-n"),10);
+      setCntButtons(); buildSlots();
+    };
+  })(cbs[z]);
+}
+$("#dosave").onclick = function(){
+  var nm = $("#setname").value.replace(/^\s+|\s+$/g,"");
+  if(!nm){ flash("セット名を入力してください", true); return; }
+  var ids = [];
+  for(var i=0;i<slotCount;i++) if(slotDrug[i]) ids.push(slotDrug[i]);
+  userSets.push({name:nm, ids:ids});
+  saveSets(); renderChips();
+  $("#setname").value=""; $("#saverow").className="saverow";
+  flash("「"+nm+"」を登録しました");
+};
+$("#cancelsave").onclick = function(){
+  $("#setname").value=""; $("#saverow").className="saverow";
+};
+</script>
+</body>
+</html>
