@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>小児薬用量計算アプリ</title>
 <style>
 :root{
@@ -13,6 +13,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
+html{touch-action:manipulation}
 body{background:var(--bg);color:var(--ink);
   font:15px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
   padding:0 0 50px;-webkit-text-size-adjust:100%}
@@ -24,18 +25,18 @@ header h1{margin:0;font-size:16px;font-weight:600}
 /* 入力バー */
 .bar{position:sticky;top:0;z-index:30;background:var(--card);
   border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.06);padding:9px 0}
-.toprow{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
-.inputs{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.toprow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.inputs{display:flex;flex-direction:column;gap:6px;margin-top:2px}
 .frow{display:flex;align-items:center;gap:8px}
 .flabel{font-size:14px;font-weight:700;color:var(--sub);width:40px;flex:none}
-.frow input{font:700 28px/1 inherit;padding:0 12px;width:128px;height:54px;
-  border:1.5px solid var(--line);border-radius:11px;background:#fff;color:var(--ink);
+.frow input{font-family:inherit;font-size:28px;font-weight:700;line-height:1;padding:0 12px;width:128px;height:34px;
+  border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);
   text-align:right;-webkit-appearance:none}
 .frow input:focus{outline:none;border-color:var(--accent);background:#fbfffe}
 .frow input.auto{color:#8d97a3;border-style:dashed}
 .unit{font-size:15px;color:var(--sub);font-weight:600}
-.stp{flex:none;width:54px;height:54px;border:1.5px solid var(--line);background:#fff;
-  border-radius:11px;color:var(--accent);font:700 26px/1 inherit;cursor:pointer;-webkit-appearance:none}
+.stp{flex:none;width:54px;height:34px;border:1.5px solid var(--line);background:#fff;
+  border-radius:9px;color:var(--accent);font-family:inherit;font-size:24px;font-weight:700;line-height:1;padding:0;cursor:pointer;-webkit-appearance:none}
 .stp:active{background:var(--accent2)}
 
 .rightside{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:2px}
@@ -44,13 +45,24 @@ header h1{margin:0;font-size:16px;font-weight:600}
   border-radius:10px;color:var(--sub);cursor:pointer;-webkit-appearance:none}
 .btn:active{background:#f2f4f7}
 .cnt{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.cnt button{font:700 15px/1 inherit;padding:11px 14px;border:none;background:#fff;
-  color:var(--sub);cursor:pointer}
+.cnt button{font-family:inherit;font-size:15px;font-weight:700;line-height:1;padding:0;width:34px;height:38px;
+  border:none;background:#fff;color:var(--sub);cursor:pointer;-webkit-appearance:none}
+.cnt button+button{border-left:1px solid var(--line)}
+@media(max-width:640px){ .toprow{gap:8px;align-items:center} .cnt button{width:29px;font-size:14px} }
+.sumrow{display:flex;align-items:center;gap:10px;margin-top:10px}
+.sumrow #msg{margin-top:0;flex:1;min-width:0}
+.sumrow .btn{flex:none;padding:9px 12px}
 .cnt button.on{background:var(--accent);color:#fff}
+#msg .wsd{display:inline-flex;flex-direction:column;vertical-align:middle;margin-left:14px;
+  font-size:13px;line-height:1.35;font-weight:700;letter-spacing:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+#msg .wsd .m{color:#1f3a93} #msg .wsd .f{color:#c2187a}
+#msg .wsd .hi{padding:0 4px;border-radius:4px;margin-left:-4px}
+#msg .wsd .m.hi{background:#e6ebf7} #msg .wsd .f.hi{background:#fbe6f1}
 #msg{margin-top:10px;font-size:26px;font-weight:700;color:var(--accent);min-height:1.2em;
   letter-spacing:.01em}
 #msg .est{font-size:15px;font-weight:600;color:#8d97a3}
 #msg.err{color:var(--warn);font-size:18px}
+#msg.fl{font-size:16px;line-height:1.35;min-height:43px;display:flex;align-items:center}
 
 /* セット */
 .sets{margin:12px 0 2px}
@@ -61,62 +73,107 @@ header h1{margin:0;font-size:16px;font-weight:600}
   color:var(--ink);cursor:pointer;-webkit-appearance:none}
 .chip:active{background:#eef4f3}
 .chip.user{border-color:#cfe3df;background:#f4faf9}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.on .x{color:#d7ece8}
 .chip .x{color:var(--sub);font-size:14px;line-height:1;padding:0 2px;border-radius:4px}
 .chip .x:hover{color:var(--warn)}
+.chip .x.go{color:#fff;background:var(--warn);font-size:12px;font-weight:700;padding:5px 8px;margin:-4px -6px -4px 2px;border-radius:999px}
+.chip.arm{border-color:var(--warn)}
 .saverow{display:none;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap}
 .saverow.open{display:flex}
-.saverow input{font:15px/1 inherit;padding:9px 10px;border:1.5px solid var(--line);
+.saverow input{font-family:inherit;font-size:16px;padding:9px 10px;border:1.5px solid var(--line);
   border-radius:9px;width:210px;-webkit-appearance:none}
 .saverow input:focus{outline:none;border-color:var(--accent)}
 .btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-/* スロット（縦並び） */
+/* スロット（1行表示） */
 .slots{margin:12px 0}
-.slot{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  overflow:hidden;margin-bottom:12px}
-.slot-h{display:flex;align-items:center;gap:6px;padding:7px 10px;background:#fafbfc;
-  border-bottom:1px solid var(--line)}
-.slot-h b{font-size:11px;color:var(--sub);letter-spacing:.05em}
-.cats{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
-.cats button{font:600 10.5px/1 inherit;padding:5px 8px;border-radius:6px;border:1px solid var(--line);
-  background:#fff;color:var(--sub);cursor:pointer}
-.cats button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-
-.body{display:flex;align-items:stretch}
-.left{width:380px;flex:none;border-right:1px solid var(--line);padding:10px;
-  display:flex;flex-direction:column;justify-content:center;gap:5px}
-@media(max-width:640px){
-  .body{display:block}
-  .left{width:auto;border-right:none;border-bottom:1px solid var(--line)}
-}
-.pick{position:relative}
-.pick .name{font:700 26px/1.3 inherit;color:var(--ink);letter-spacing:-.01em;
-  padding:14px 36px 14px 14px;border:1.5px solid var(--line);border-radius:11px;background:#fff;
-  min-height:76px;display:flex;align-items:center}
-.pick:after{content:"";position:absolute;right:15px;top:50%;margin-top:-3px;
-  border:6px solid transparent;border-top-color:#8d97a3;pointer-events:none}
-.pick select{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;
-  font-size:16px;cursor:pointer;-webkit-appearance:none;appearance:none;border:0;background:none}
-.pick select:focus + .name{border-color:var(--accent)}
-@media(max-width:640px){ .pick .name{font-size:22px;min-height:64px} }
-.subline{font-size:11.5px;color:var(--sub);padding-left:4px;
+.slot{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  margin-bottom:7px;padding:7px 8px 7px 12px}
+.row{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.dname{flex:1 1 130px;min-width:0;text-align:left;font-family:inherit;font-size:18px;font-weight:700;line-height:1.3;color:var(--ink);
+  background:none;border:0;padding:4px 0;margin:0;cursor:pointer;-webkit-appearance:none;
+  letter-spacing:0}
+.dname .cj{letter-spacing:-.1em}
+.dname .i{margin-left:6px}
+.dname:active{opacity:.6}
+.dname .i{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
+  margin-left:5px;border-radius:50%;border:1.3px solid #a5b0bb;color:#8d97a3;
+  font:700 11px/1 Georgia,serif;font-style:italic;vertical-align:2px}
+.rv{display:flex;align-items:center;gap:10px;margin-left:auto;flex:none}
+.vals{display:flex;align-items:baseline;gap:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.amt{font-size:18px;font-weight:700;color:var(--sub)}
+.vbig{font-size:23px;font-weight:700;color:var(--accent);letter-spacing:-.01em}
+.vbig.none{font-size:13.5px;color:#9aa6b2;font-weight:600}
+.row2{display:flex;align-items:center;gap:8px;margin-top:1px}
+.row2 .subline{flex:1;min-width:0;margin-top:0}
+.chg{flex:none;height:26px;padding:0 11px;border:1px solid var(--line);border-radius:9px;
+  background:#fff;color:var(--sub);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;-webkit-appearance:none}
+.chg:active{background:#f2f4f7}
+.subline{font-size:11.5px;color:var(--sub);margin-top:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wflag{display:inline-block;font-size:10.5px;color:var(--warn);background:var(--warnbg);
+  border-radius:5px;padding:1px 6px;margin-top:3px}
+@media(max-width:640px){
+}
+@media(max-width:640px){ .slots .slot{padding:5px 6px 5px 8px} .row{gap:4px 6px} .wrap{padding:0 10px}
+  .dname .i{margin-left:4px;width:15px;height:15px;font-size:10px} .dname{font-size:16px} .vbig{font-size:20px}
+  .amt{font-size:16px} .vals{gap:6px} .rv{gap:7px} .chg{height:26px;padding:0 10px;font-size:11.5px} }
 
-.res{padding:12px 16px;background:#fcfdfd;flex:1;display:flex;flex-direction:column;
-  justify-content:center;min-width:0}
-.vals{display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap}
-.v{min-width:0}
-.vlab{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.06em;margin-bottom:1px}
-.vnum{font-size:23px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;
-  line-height:38px;white-space:nowrap}
-.vnum.big{font-size:32px;color:var(--accent)}
-.res .big{font-size:32px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;
-  line-height:1.1;color:var(--accent)}
-.res .big.none{font-size:16px;color:#9aa6b2;font-weight:600}
-.res .freq{font-size:13px;color:var(--ink);font-weight:700;margin-top:3px}
-.res .det{font-size:11.5px;color:var(--sub);margin-top:7px;line-height:1.55}
-.res .flag{display:inline-block;font-size:10.5px;color:var(--warn);background:var(--warnbg);
-  border-radius:5px;padding:2px 6px;margin-top:7px;align-self:flex-start}
+/* シート（詳細・薬剤選択） */
+.ov{position:fixed;left:0;top:0;right:0;bottom:0;z-index:60;background:rgba(15,20,25,.45);
+  display:none;align-items:flex-end;justify-content:center}
+.ov.open{display:flex}
+.sheet{background:#fff;width:100%;max-width:640px;max-height:88vh;border-radius:16px 16px 0 0;
+  display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom)}
+@media(min-width:700px){ .ov{align-items:center} .sheet{border-radius:16px;max-height:80vh} }
+.sh-h{display:flex;align-items:flex-start;gap:10px;padding:14px 14px 10px 16px;border-bottom:1px solid var(--line)}
+.sh-h h2{margin:0;font-size:19px;line-height:1.35;flex:1;min-width:0}
+.sh-h h2 small{display:block;font-size:12px;color:var(--sub);font-weight:600;margin-top:2px}
+.sh-x{flex:none;width:36px;height:36px;border:0;border-radius:50%;background:#f0f2f5;color:var(--sub);
+  font:600 18px/1 inherit;cursor:pointer}
+.sh-b{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 18px}
+.dres{display:flex;gap:26px;flex-wrap:wrap;background:var(--band);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.dres .vlab{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.06em}
+.dres .vnum{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dres .vnum.big{font-size:30px;color:var(--accent)}
+.dres .none{font-size:16px;color:#9aa6b2;font-weight:600}
+.kv{width:100%;border-collapse:collapse;font-size:14px}
+.kv th{width:76px;font-size:11.5px;color:var(--sub);background:none;font-weight:700;vertical-align:top;padding:7px 8px 7px 0}
+.kv td{padding:7px 0;vertical-align:top}
+.dflag{font-size:12.5px;color:var(--warn);background:var(--warnbg);border-radius:8px;padding:7px 10px;margin-bottom:10px}
+.sh-actions{margin-top:14px}
+.sh-actions .btn{width:100%;padding:13px;font-size:14px}
+
+.pk-top{padding:10px 16px 8px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.pcats{display:flex;gap:5px;flex-wrap:wrap}
+.pcats button{font-family:inherit;font-size:13px;font-weight:700;line-height:1;padding:9px 13px;border-radius:8px;border:1px solid var(--line);
+  background:#fff;color:var(--sub);cursor:pointer;-webkit-appearance:none}
+.pcats button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pk-q{font-family:inherit;font-size:16px;padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;width:100%;-webkit-appearance:none}
+.pk-q:focus{outline:none;border-color:var(--accent)}
+.plist{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 8px 14px}
+.pitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:0;
+  border-bottom:1px solid var(--line);padding:10px 8px;cursor:pointer;font-family:inherit;color:var(--ink);-webkit-appearance:none}
+.pitem:active{background:#f2f4f7}
+.pitem.cur{background:var(--accent2);border-radius:8px}
+.pitem .pn{flex:1;min-width:0}
+.pitem .pn b{display:block;font-size:15.5px;line-height:1.35}
+.pitem .pn span{display:block;font-size:11.5px;color:var(--sub)}
+.pitem .pc{flex:none;font-size:10.5px;color:var(--sub);border:1px solid var(--line);border-radius:5px;padding:2px 5px}
+.pitem .pv{flex:none;font-size:14px;font-weight:700;color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pempty{padding:20px;text-align:center;color:var(--sub);font-size:13px}
+.addbtn{display:block;width:100%;margin:2px 0 4px;padding:11px;border:1.5px dashed #b9c6cf;border-radius:12px;
+  background:#fff;color:var(--accent);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.addbtn:active{background:var(--accent2)}
+.addbtn:disabled{color:#9aa6b2;border-color:var(--line);cursor:default}
+.pk-del{flex:none;height:36px;padding:0 12px;border:1px solid #efc9a5;border-radius:9px;background:var(--warnbg);
+  color:var(--warn);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.pk-del:active{background:#f8e0c4}
+.del{flex:none;width:26px;height:26px;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;
+  color:#9aa6b2;font-family:inherit;font-size:15px;line-height:1;cursor:pointer;-webkit-appearance:none}
+.del:active{background:var(--warnbg);color:var(--warn)}
+#alltab td.tn{cursor:pointer;color:var(--accent)}
 
 details{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:12px 0;overflow:hidden}
 summary{padding:12px 14px;font-size:13px;font-weight:600;cursor:pointer;color:var(--accent);
@@ -139,34 +196,13 @@ tr:last-child td{border-bottom:none}
 <body>
 
 <header><div class="wrap">
-  <h1>小児薬用量計算アプリ ver1 (2026/9)</h1>
+  <h1>小児薬用量計算アプリ ver2 (2026/10)</h1>
   </div></header>
 
 <div class="bar">
   <div class="wrap">
-    <div class="toprow">
-      <div class="rlabel">薬剤数</div>
-
-      <div class="cnt" id="cnt">
-        <button data-n="1">1</button>
-        <button data-n="2">2</button>
-        <button data-n="3">3</button>
-        <button data-n="4">4</button>
-        <button data-n="5">5</button>
-      </div>
-
-      <button class="btn" id="clear">クリア</button>
-    </div>
 
     <div class="inputs">
-      <div class="frow">
-        <span class="flabel">体重</span>
-        <button class="stp" id="wminus" title="1 kg 減らす">−</button>
-        <input id="w" type="number" inputmode="decimal" step="0.1" min="0">
-        <button class="stp" id="wplus" title="1 kg 増やす">＋</button>
-        <span class="unit">kg</span>
-      </div>
-
       <div class="frow">
         <span class="flabel">年齢</span>
         <button class="stp" id="yminus" title="1歳 減らす">−</button>
@@ -174,9 +210,17 @@ tr:last-child td{border-bottom:none}
         <button class="stp" id="yplus" title="1歳 増やす">＋</button>
         <span class="unit">歳</span>
       </div>
+
+      <div class="frow">
+        <span class="flabel">体重</span>
+        <button class="stp" id="wminus" title="1 kg 減らす">−</button>
+        <input id="w" type="number" inputmode="decimal" step="0.1" min="0">
+        <button class="stp" id="wplus" title="1 kg 増やす">＋</button>
+        <span class="unit">kg</span>
+      </div>
     </div>
 
-    <div id="msg"></div>
+    <div class="sumrow"><div id="msg"></div><button class="btn" id="clear">クリア</button></div>
 
   </div>
 </div>
@@ -184,7 +228,6 @@ tr:last-child td{border-bottom:none}
 <div class="wrap">
 
   <div class="sets">
-    <h3>セット</h3>
     <div class="chips" id="chips"></div>
     <div class="saverow" id="saverow">
       <input id="setname" type="text" placeholder="セット名（例：かぜ 咳あり）" maxlength="24">
@@ -194,6 +237,7 @@ tr:last-child td{border-bottom:none}
   </div>
 
   <div class="slots" id="slots"></div>
+  <button class="addbtn" id="adddrug" type="button">＋ 薬剤を追加</button>
 
   <div class="disc">処方前に添付文書・ガイドラインで必ず確認してください。</div>
 
@@ -210,6 +254,8 @@ tr:last-child td{border-bottom:none}
   </footer>
 
 </div>
+
+<div class="ov" id="ov"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
 "use strict";
@@ -251,7 +297,7 @@ var DRUGS = [
  {id:"a_inavir", cat:"外", n:"イナビル", s:"ラニナミビル", type:"a", rows:[["10歳未満", 0, 119, "20 mg", "1キット", "単回・1回2吸入"], ["10歳以上", 120, 9999, "40 mg", "2キット", "単回・1回4吸入"]]},
  {id:"f_relenza", cat:"外", n:"リレンザ", s:"ザナミビル", type:"f", freq:"1日2回 × 5日間", note:"5 mg/ブリスター（20ブリスター）／吸入できる5歳以上に・4歳以下は安全性未確立／予防は1日1回10日間", val:"1回 2ブリスター"},
  {id:"i_rapiacta", cat:"外", n:"ラピアクタ", s:"ペラミビル", type:"i", dose:10, freq:"15分以上かけて単回DIV", max:600, note:"成人量 300 mg（または複数回点滴）"},
- {id:"z_xofluza", cat:"錠", n:"ゾフルーザ", s:"バロキサビル", type:"c", freq:"分1（単回）", note:"48時間以内に開始／錠 10・20 mg", rows:[["12歳以上・80 kg以上", 144, 9999, 80, null, "80 mg", "20 mg錠 4錠", "分1（単回）"], ["12歳以上・80 kg未満", 144, 9999, null, 80, "40 mg", "20 mg錠 2錠", "分1（単回）"], ["12歳未満・40 kg以上", 0, 143, 40, null, "40 mg", "20 mg錠 2錠", "分1（単回）"], ["12歳未満・20-40 kg", 0, 143, 20, 40, "20 mg", "20 mg錠 1錠", "分1（単回）"], ["12歳未満・20 kg未満", 0, 143, null, 20, "10 mg", "10 mg錠 1錠", "分1（単回）"]]},
+ {id:"z_xofluza", cat:"錠", n:"ゾフルーザ", s:"バロキサビル", type:"c", freq:"分1（単回）", note:"48時間以内に開始／錠 10・20 mg", rows:[["12歳以上・80 kg以上", 144, 9999, 80, null, "80 mg", "20 mg 4錠", "分1（単回）"], ["12歳以上・80 kg未満", 144, 9999, null, 80, "40 mg", "20 mg 2錠", "分1（単回）"], ["12歳未満・40 kg以上", 0, 143, 40, null, "40 mg", "20 mg 2錠", "分1（単回）"], ["12歳未満・20-40 kg", 0, 143, 20, 40, "20 mg", "20 mg 1錠", "分1（単回）"], ["12歳未満・20 kg未満", 0, 143, null, 20, "10 mg", "10 mg 1錠", "分1（単回）"]]},
  {id:"z_xocova", cat:"錠", n:"ゾコーバ", s:"エンシトレルビル", type:"c", freq:"分1 × 5日間", note:"ゾコーバ錠 25mg・125 mg／2日目以降は用量変更／20 kg未満は対象外", rows:[["12歳以上", 144, 9999, null, null, "375 mg", "", "1日目 375 mg 分1・2-5日目は 125 mg 分1"], ["6歳以上12歳未満・40 kg以上", 72, 143, 40, null, "375 mg", "", "1日目 375 mg 分1・2-5日目は 125 mg 分1"], ["6歳以上12歳未満・30-40 kg", 72, 143, 30, 40, "250 mg", "", "1日目 250 mg 分1・2-5日目は 125 mg 分1"], ["6歳以上12歳未満・20-30 kg", 72, 143, 20, 30, "150 mg", "", "1日目 150 mg 分1・2-5日目は 75 mg 分1"]]},
  {id:"x_maoto", cat:"散", n:"麻黄湯エキス顆粒", s:"漢方エキス製剤", type:"x", gkg:0.2, freq:"分2-3 食前or食間", ratio:"0.2 g/kg/日（製剤量）", maxg:7.5, note:"成人量 7.5g/日"},
  {id:"p_zovirax", cat:"散", n:"ゾビラックス顆粒 40%", s:"アシクロビル", type:"p", conc:40, dose:80, freq:"分4", max:3200, note:"錠 200・400 mg／成人量 3200 mg/日"},
@@ -264,13 +310,13 @@ var DRUGS = [
  {id:"p_zesulan", cat:"散", n:"ゼスラン細粒 0.6%", s:"メキタジン", type:"p", conc:0.6, dose:0.12, freq:"分2", max:12, note:"錠 3 mg／成人量 12 mg/日"},
  {id:"p_epina", cat:"散", n:"アレジオンDS 1%", s:"エピナスチン", type:"p", conc:1, dose:0.25, freq:"分1", max:20, note:"0.25-0.5 mg/kg/日／錠 10 mg・成人量 20 mg/日"},
  {id:"a_zyrtec_ds", cat:"散", n:"ジルテックDS 1.25%", s:"セチリジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "0.4 g", "分2"], ["7歳-15歳", 84, 191, "10 mg", "0.8 g", "分2"]]},
- {id:"a_zyrtec_tab", cat:"錠", n:"ジルテック錠 5 mg", s:"セチリジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "5 mg錠 1錠", "分2"], ["7歳-15歳", 84, 191, "10 mg", "5 mg錠 2錠", "分2"]]},
- {id:"a_allelock", cat:"錠", n:"アレロック錠 2.5・5 mg", s:"オロパタジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "2.5 mg錠 2錠", "分2"], ["7歳以上", 84, 9999, "10 mg", "5 mg錠 2錠", "分2"]]},
- {id:"a_claritin", cat:"錠", n:"クラリチン錠 10 mg", s:"ロラタジン", type:"a", rows:[["3歳-7歳未満", 36, 83, "5 mg", "10 mg錠 0.5錠", "分1"], ["7歳以上", 84, 9999, "10 mg", "10 mg錠 1錠", "分1"]]},
+ {id:"a_zyrtec_tab", cat:"錠", n:"ジルテック錠 5 mg", s:"セチリジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "5 mg 1錠", "分2"], ["7歳-15歳", 84, 191, "10 mg", "5 mg 2錠", "分2"]]},
+ {id:"a_allelock", cat:"錠", n:"アレロック錠 2.5・5 mg", s:"オロパタジン", type:"a", rows:[["2歳-7歳未満", 24, 83, "5 mg", "2.5 mg 2錠", "分2"], ["7歳以上", 84, 9999, "10 mg", "5 mg 2錠", "分2"]]},
+ {id:"a_claritin", cat:"錠", n:"クラリチン錠 10 mg", s:"ロラタジン", type:"a", rows:[["3歳-7歳未満", 36, 83, "5 mg", "10 mg 0.5錠", "分1"], ["7歳以上", 84, 9999, "10 mg", "10 mg 1錠", "分1"]]},
  {id:"a_allegra_ds", cat:"散", n:"フェキソフェナジンDS 5%", s:"フェキソフェナジン", type:"a", rows:[["6か月-2歳未満", 6, 23, "30 mg", "0.6 g", "分2"], ["2歳-7歳未満", 24, 83, "60 mg", "1.2 g", "分2"], ["7歳-12歳未満", 84, 143, "60 mg", "1.2 g", "分2"], ["12歳以上", 144, 9999, "120 mg", "2.4 g", "分2"]]},
- {id:"a_allegra_tab", cat:"錠", n:"アレグラ錠 30・60 mg", s:"フェキソフェナジン", type:"a", rows:[["7歳-12歳未満", 84, 143, "60 mg", "30 mg錠 2錠", "分2"], ["12歳以上", 144, 9999, "120 mg", "60 mg錠 2錠", "分2"]]},
- {id:"a_xyzal_sy", cat:"Sy", n:"ザイザル Sy 0.05%", s:"レボセチリジン", type:"a", rows:[["6か月-1歳未満", 6, 11, "1.25 mg", "2.5 mL", "分1"], ["1歳-7歳未満", 12, 83, "2.5 mg", "5 mL", "分2"], ["7歳-15歳未満", 84, 179, "5 mg", "10 mL", "分2"]]},
- {id:"a_xyzal_tab", cat:"錠", n:"ザイザルOD錠 2.5・5 mg", s:"レボセチリジン", type:"a", rows:[["7歳-15歳", 84, 191, "5 mg", "5 mg錠 1錠", "分2"]]},
+ {id:"a_allegra_tab", cat:"錠", n:"アレグラ錠 30・60 mg", s:"フェキソフェナジン", type:"a", rows:[["7歳-12歳未満", 84, 143, "60 mg", "30 mg 2錠", "分2"], ["12歳以上", 144, 9999, "120 mg", "60 mg 2錠", "分2"]]},
+ {id:"a_xyzal_sy", cat:"Sy", n:"ザイザル Sy 0.05%", s:"レボセチリジン", type:"a", rows:[["6か月-1歳未満", 6, 11, "1.25 mg", "2.5 mL", "分1"], ["1歳-7歳未満", 12, 83, "2.5 mg", "5.0 mL", "分2"], ["7歳-15歳未満", 84, 179, "5 mg", "10.0 mL", "分2"]]},
+ {id:"a_xyzal_tab", cat:"錠", n:"ザイザルOD錠 2.5・5 mg", s:"レボセチリジン", type:"a", rows:[["7歳-15歳", 84, 191, "5 mg", "5 mg 1錠", "分2"]]},
  {id:"a_levoceti", cat:"散", n:"レボセチリジンDS 0.5%", s:"レボセチリジン", type:"a", rows:[["6か月-1歳未満", 6, 11, "1.25 mg", "0.25 g", "分1"], ["1歳-7歳未満", 12, 83, "2.5 mg", "0.5 g", "分2"], ["7歳以上", 84, 9999, "5 mg", "1.0 g", "分2"]]},
  {id:"a_kipres", cat:"散", n:"キプレス／シングレア", s:"モンテルカスト", type:"a", rows:[["1歳-5歳", 12, 71, "4 mg", "細粒 1包", "分1 寝る前"], ["6歳以上", 72, 9999, "5 mg", "チュアブル錠 1錠", "分1 寝る前"]]},
  {id:"t_onon", cat:"散", n:"オノンDS 10%", s:"プランルカスト", type:"p", conc:10, dose:7, freq:"分2", max:225, note:"1 Cap = 112.5 mg／成人量 2 Cap 分2（225 mg）", rows:[["6", 40, 0.4, "", "", ""], ["8", 50, 0.5, "", "", ""], ["10", 70, 0.7, "", "", ""], ["12", 80, 0.8, "", "", ""], ["13", 90, 0.9, "", "", ""], ["15", 100, 1, "", "", ""], ["18", 120, 1.2, "", "", ""], ["20", 140, 1.4, "", "", ""], ["23", 160, 1.6, "", "", ""], ["26", 180, 1.8, "", "", ""], ["30", 210, 2.1, "", "", ""], ["32.1", 225, 2.25, "", "", ""]]},
@@ -280,23 +326,21 @@ var DRUGS = [
  {id:"f_calamine", cat:"外", n:"カチリ 20 g", s:"フェノール・亜鉛華リニメント・水痘の発疹", type:"f", val:"外用"},
  {id:"c_diap", cat:"坐", n:"ダイアップ坐剤", s:"ジアゼパム", type:"c", freq:"発熱時・8時間後に追加", ratio:"0.4-0.5 mg/kg/回", note:"けいれん予防／発熱時に1個挿入し、発熱が続けば8時間後に追加／坐剤 4・6・10 mg／4 kg未満は表外", rows:[["4 kg以上6 kg未満", 0, 9999, 4, 6, "2 mg", "4 mg 坐剤 1/2個", ""], ["6 kg以上8 kg未満", 0, 9999, 6, 8, "約2.7 mg", "4 mg 坐剤 2/3個", ""], ["8 kg以上13 kg未満", 0, 9999, 8, 13, "4 mg", "4 mg 坐剤 1個", ""], ["13 kg以上20 kg未満", 0, 9999, 13, 20, "6 mg", "6 mg 坐剤 1個", ""], ["20 kg以上", 0, 9999, 20, null, "10 mg", "10 mg 坐剤 1個", ""]]},
  {id:"c_calonal", cat:"坐", n:"アンヒバ坐剤", s:"アセトアミノフェン", type:"c", per:"回", freq:"頓用", ratio:"10-15 mg/kg/回", note:"坐剤 50・100・200 mg", rows:[["4 kg以上6 kg未満", 0, 9999, 4, 6, "50 mg", "100 mg 坐剤 1/2個", ""], ["6 kg以上8 kg未満", 0, 9999, 6, 8, "約67 mg", "100 mg 坐剤 2/3個", ""], ["8 kg以上11 kg未満", 0, 9999, 8, 11, "100 mg", "100 mg 坐剤 1個", ""], ["11 kg以上14 kg未満", 0, 9999, 11, 14, "約133 mg", "200 mg 坐剤 2/3個", ""], ["14 kg以上16 kg未満", 0, 9999, 14, 16, "150 mg", "200 mg 坐剤 3/4個", ""], ["16 kg以上", 0, 9999, 16, null, "200 mg", "200 mg 坐剤 1個", ""]]},
- {id:"a_carbo", cat:"錠", n:"カルボシステイン錠 250mg", s:"カルボシステイン", type:"c", max:1500, note:"錠 250・500 mg／成人量 1500 mg/日", rows:[["25-37 kg", 0, 9999, 25, 38, "750 mg", "250 mg錠 3錠", "分3"], ["38-44 kg", 0, 9999, 38, 45, "1000 mg", "250 mg錠 4錠", "分2"], ["45 kg以上", 0, 9999, 45, null, "1500 mg", "250 mg錠 6錠", "分3"]]},
- {id:"a_mucos", cat:"錠", n:"ムコソルバン錠 15mg", s:"アンブロキソール", type:"c", max:45, note:"錠 15 mg／成人量 45 mg/日", rows:[["25-37 kg", 0, 9999, 25, 38, "30 mg", "15 mg錠 2錠", "分2"], ["38 kg以上", 0, 9999, 38, null, "45 mg", "15 mg錠 3錠", "分3"]]},
- {id:"a_transa", cat:"錠", n:"トランサミン錠 250mg", s:"トラネキサム酸", type:"c", max:750, note:"錠 250 mg／成人量 750 mg/日", rows:[["25-30 kg", 0, 9999, 25, 30, "500 mg", "250 mg錠 2錠", "分2"], ["30 kg以上", 0, 9999, 30, null, "750 mg", "250 mg錠 3錠", "分3"]]},
- {id:"a_asv_san", cat:"錠", n:"アスベリン錠 10mg", s:"チペピジン", type:"c", max:120, note:"錠 10・20 mg／成人量 60 mg/日", rows:[["25 kg以上", 0, 9999, 25, null, "30 mg", "10 mg錠 3錠", "分3"]]},
- {id:"a_medicon", cat:"錠", n:"メジコン錠 15mg", s:"デキストロメトルファン", type:"c", max:120, note:"錠 15 mg／成人量 120 mg/日", rows:[["30 kg以上", 0, 9999, 30, null, "45 mg", "15 mg錠 3錠", "分3"]]}
+ {id:"a_carbo", cat:"錠", n:"カルボシステイン錠 250mg", s:"カルボシステイン", type:"c", max:1500, note:"錠 250・500 mg／成人量 1500 mg/日", rows:[["25-37 kg", 0, 9999, 25, 38, "750 mg", "250 mg 3錠", "分3"], ["38-44 kg", 0, 9999, 38, 45, "1000 mg", "250 mg 4錠", "分2"], ["45 kg以上", 0, 9999, 45, null, "1500 mg", "250 mg 6錠", "分3"]]},
+ {id:"a_mucos", cat:"錠", n:"ムコソルバン錠 15mg", s:"アンブロキソール", type:"c", max:45, note:"錠 15 mg／成人量 45 mg/日", rows:[["25-37 kg", 0, 9999, 25, 38, "30 mg", "15 mg 2錠", "分2"], ["38 kg以上", 0, 9999, 38, null, "45 mg", "15 mg 3錠", "分3"]]},
+ {id:"a_transa", cat:"錠", n:"トランサミン錠 250mg", s:"トラネキサム酸", type:"c", max:750, note:"錠 250 mg／成人量 750 mg/日", rows:[["25-30 kg", 0, 9999, 25, 30, "500 mg", "250 mg 2錠", "分2"], ["30 kg以上", 0, 9999, 30, null, "750 mg", "250 mg 3錠", "分3"]]},
+ {id:"a_asv_san", cat:"錠", n:"アスベリン錠 10mg", s:"チペピジン", type:"c", max:120, note:"錠 10・20 mg／成人量 60 mg/日", rows:[["25 kg以上", 0, 9999, 25, null, "30 mg", "10 mg 3錠", "分3"]]},
+ {id:"a_medicon", cat:"錠", n:"メジコン錠 15mg", s:"デキストロメトルファン", type:"c", max:120, note:"錠 15 mg／成人量 120 mg/日", rows:[["30 kg以上", 0, 9999, 30, null, "45 mg", "15 mg 3錠", "分3"]]}
 ];
 
 var PRESETS = [
- {name:"頻用薬", ids:["p_carbo", "p_mucosal", "p_asv_ds", "p_transa", "p_calonal"]},
+ {name:"頻用薬", ids:["p_carbo", "p_mucosal", "p_asv_ds", "a_levoceti", "p_meptin", "p_transa", "p_calonal"]},
  {name:"頻用薬-錠", ids:["a_carbo", "a_mucos", "a_asv_san", "a_transa", "a_medicon"]},
- {name:"シロップ", ids:["s_muco", "s_mucos", "s_asv", "s_meptin", "a_xyzal_sy"]},
- {name:"Flu・COVID", ids:["p_tamiflu", "a_inavir", "f_relenza", "z_xofluza", "z_xocova"]},
- {name:"水痘", ids:["p_zovirax", "p_valtrex", "f_calamine"]},
- {name:"H1AH-粉", ids:["p_epina", "a_zyrtec_ds", "a_levoceti", "a_allegra_ds", "p_pola"]},
- {name:"H1AH-錠", ids:["a_allegra_tab", "a_zyrtec_tab", "a_allelock", "a_claritin", "a_xyzal_tab"]},
- {name:"抗菌薬", ids:["t_ampc", "p_clavamox", "p_meiact", "t_cam", "p_ozex"]},
+ {name:"シロップ", ids:["s_muco", "s_mucos", "s_asv", "s_meptin", "a_xyzal_sy", "s_calonal"]},
+ {name:"抗ウイルス", ids:["p_tamiflu", "a_inavir", "f_relenza", "z_xofluza", "p_zovirax", "p_valtrex", "z_xocova"]},
+ {name:"抗ヒ薬", ids:["p_epina", "a_zyrtec_ds", "a_levoceti", "a_allegra_ds", "p_pola", "a_allegra_tab", "a_zyrtec_tab", "a_allelock", "a_claritin", "a_xyzal_tab"]},
  {name:"喘息", ids:["t_onon", "a_kipres", "p_meptin", "a_hoku_tape", "s_rinde"]},
+ {name:"抗菌薬", ids:["t_ampc", "p_clavamox", "p_meiact", "t_cam", "p_ozex"]},
  {name:"坐薬", ids:["c_diap", "c_calonal"]}
 ];
 
@@ -320,7 +364,7 @@ function roundG(g,step){
   if(g>=0.01) return fix(floorTo(g,0.01),2);
   return fix(g,3);
 }
-function roundML(ml){ return ml>=5 ? fix(floorTo(ml,1),0) : fix(floorTo(ml,0.5),1); }
+function roundML(ml){ return ml>=0.1 ? fix(floorTo(ml,0.1),1) : fix(floorTo(ml,0.01),2); }
 
 /* 年齢は「歳」入力。Y歳 = Y*12 〜 Y*12+11 か月 として区分に当てる */
 function ageHit(rows, Y){
@@ -461,17 +505,32 @@ function calc(d, W, Y){
   return {biglab:"用量", big:d.val, freq:d.freq, det:d.note||"", flag:""};
 }
 
+/* 「30 mg錠 2錠」のように錠が重複する表記を「30 mg 2錠」に（チュアブル錠などは残す） */
+function tabFmt(t){
+  if(typeof t!=="string") return t;
+  t = t.replace(/(mg|µg|g)\s*錠(?=\s*[0-9.\/]+\s*錠)/g, "$1");
+  t = t.replace(/(^|[^0-9.])([0-9]+)(\s*mL)(?!\s*\/\s*kg)/g, "$1$2.0$3");
+  return t;
+}
+var calcRaw = calc;
+calc = function(d, W, Y){
+  var r = calcRaw(d, W, Y);
+  r.big = tabFmt(r.big); r.amt = tabFmt(r.amt); r.det = tabFmt(r.det);
+  return r;
+};
+
 /* ===================== 状態 ===================== */
 var byId = {};
 for (var k=0;k<DRUGS.length;k++) byId[DRUGS[k].id] = DRUGS[k];
 
 var slotCount = 2;
-var MAXSLOT = 5;
+var MAXSLOT = 10;
 var slotDrug  = ["p_carbo","p_mucosal","p_calonal","p_asv_ds","p_meptin"];
-var slotCat   = ["all","all","all","all","all"];
+/* 6〜10 枠目の初期値：まだ使っていない薬剤を上から */
+(function(){ for(var k=0; k<DRUGS.length && slotDrug.length<MAXSLOT; k++)
+  if(slotDrug.indexOf(DRUGS[k].id)<0) slotDrug.push(DRUGS[k].id); })();
 var userSets  = [];
 var autoW = false, autoY = false;
-var ITEM_H    = 44;
 
 function $(s){ return document.querySelector(s); }
 function el(t,c){ var e=document.createElement(t); if(c) e.className=c; return e; }
@@ -517,17 +576,35 @@ function autofill(changed){
 
 var flashTimer = null;
 function flash(t, isErr){
-  var m = $("#msg"); m.textContent = t; m.className = isErr ? "err" : "";
+  var m = $("#msg"); m.textContent = t; m.className = isErr ? "err fl" : "fl";
   if(flashTimer) clearTimeout(flashTimer);
   flashTimer = setTimeout(showSummary, 2600);
 }
 function showSummary(){
   var st = state(), p = [];
-  if(st.W!==null) p.push(trimZero(fix(st.W,1))+" kg"+(autoW?'<span class="est">（推定）</span>':""));
   if(st.Y!==null) p.push(st.Y+" 歳"+(autoY?'<span class="est">（推定）</span>':""));
+  if(st.W!==null) p.push(trimZero(fix(st.W,1))+" kg"+(autoW?'<span class="est">（推定）</span>':""));
   var m = $("#msg"); m.className = "";
-  if(p.length) m.innerHTML = p.join('<span class="est">　/　</span>');
+  if(p.length) m.innerHTML = p.join('<span class="est">　/　</span>') + wsdHTML();
   else m.innerHTML = '<span class="est">体重または年齢を入力してください</span>';
+}
+
+/* 体重の基準値（日本小児内分泌学会 日本人小児の体格の評価 附表1・2000年度データ）
+   月齢 0〜210 (17歳6か月) の [平均kg, SD kg] */
+var WREF_M = [[3.0,0.4],[4.3,0.6],[5.5,0.7],[6.4,0.8],[7.1,0.9],[7.7,0.8],[8.0,0.9],[8.2,0.9],[8.6,1.0],[8.9,1.0],[9.1,0.9],[9.2,0.9],[9.3,0.9],[9.5,0.9],[9.8,1.0],[9.9,1.0],[10.1,1.0],[10.3,1.1],[10.5,1.2],[10.6,1.1],[10.9,1.1],[11.2,1.2],[11.3,1.2],[11.4,1.1],[11.6,1.2],[11.8,1.2],[12.0,1.2],[12.1,1.3],[12.3,1.3],[12.5,1.3],[12.7,1.3],[12.8,1.3],[13.0,1.4],[13.2,1.4],[13.3,1.4],[13.5,1.5],[13.7,1.5],[13.9,1.6],[14.0,1.6],[14.2,1.7],[14.4,1.7],[14.5,1.7],[14.7,1.8],[14.8,1.8],[15.0,1.8],[15.1,1.8],[15.3,1.9],[15.4,1.9],[15.6,2.0],[15.8,2.0],[15.9,2.1],[16.1,2.1],[16.3,2.1],[16.4,2.1],[16.6,2.1],[16.7,2.2],[16.9,2.2],[17.0,2.2],[17.3,2.3],[17.5,2.4],[17.7,2.5],[17.9,2.6],[18.1,2.8],[18.3,2.9],[18.5,2.9],[18.7,2.9],[18.9,3.0],[19.1,3.0],[19.3,3.0],[19.6,3.0],[19.8,3.1],[20.1,3.2],[20.3,3.3],[20.6,3.4],[20.8,3.5],[21.1,3.5],[21.3,3.6],[21.6,3.7],[21.8,3.8],[22.0,3.8],[22.2,3.9],[22.5,3.9],[22.7,4.0],[22.9,4.0],[23.1,4.1],[23.3,4.2],[23.5,4.2],[23.8,4.3],[24.0,4.3],[24.2,4.4],[24.4,4.4],[24.7,4.5],[25.0,4.6],[25.2,4.7],[25.5,4.8],[25.8,4.9],[26.1,5.0],[26.3,5.1],[26.6,5.2],[26.9,5.3],[27.2,5.4],[27.4,5.5],[27.7,5.6],[28.0,5.7],[28.3,5.8],[28.6,5.9],[28.9,6.0],[29.2,6.1],[29.5,6.2],[29.7,6.3],[30.0,6.4],[30.3,6.5],[30.6,6.6],[30.9,6.7],[31.2,6.8],[31.5,6.9],[31.9,7.0],[32.2,7.1],[32.5,7.2],[32.8,7.3],[33.2,7.4],[33.5,7.5],[33.8,7.6],[34.1,7.7],[34.5,7.8],[34.8,7.8],[35.1,7.9],[35.5,8.0],[35.8,8.1],[36.2,8.2],[36.5,8.3],[36.9,8.4],[37.3,8.5],[37.6,8.6],[38.0,8.7],[38.3,8.8],[38.7,8.9],[39.0,9.0],[39.4,9.2],[39.9,9.3],[40.4,9.4],[40.9,9.5],[41.4,9.6],[41.9,9.7],[42.4,9.8],[42.9,9.9],[43.4,10.0],[43.9,10.1],[44.4,10.2],[44.9,10.3],[45.4,10.4],[45.8,10.4],[46.2,10.4],[46.7,10.4],[47.1,10.4],[47.5,10.4],[47.9,10.4],[48.3,10.4],[48.7,10.5],[49.2,10.5],[49.6,10.5],[50.0,10.5],[50.4,10.5],[50.8,10.5],[51.2,10.5],[51.7,10.4],[52.1,10.4],[52.5,10.4],[52.9,10.4],[53.3,10.4],[53.7,10.4],[54.2,10.4],[54.6,10.4],[55.0,10.4],[55.4,10.3],[55.8,10.4],[56.1,10.4],[56.5,10.5],[56.8,10.5],[57.2,10.5],[57.6,10.6],[57.9,10.6],[58.3,10.7],[58.6,10.7],[59.0,10.7],[59.3,10.8],[59.7,10.8],[59.8,10.8],[60.0,10.7],[60.1,10.7],[60.2,10.6],[60.3,10.5],[60.5,10.5],[60.6,10.4],[60.7,10.4],[60.8,10.3],[61.0,10.2],[61.1,10.2],[61.2,10.1],[61.3,10.1],[61.4,10.2],[61.6,10.2],[61.7,10.2],[61.8,10.2],[61.9,10.2],[62.0,10.2],[62.1,10.3],[62.3,10.3],[62.4,10.3],[62.5,10.3],[62.6,10.3]];
+var WREF_F = [[3.0,0.4],[4.1,0.5],[5.2,0.6],[6.0,0.7],[6.6,0.8],[7.0,0.8],[7.5,0.8],[7.8,0.8],[8.0,0.9],[8.2,0.9],[8.5,0.9],[8.6,0.9],[8.7,1.0],[9.0,0.9],[9.2,0.9],[9.3,1.0],[9.5,0.9],[9.7,1.0],[9.9,1.0],[10.2,1.1],[10.4,1.1],[10.4,1.0],[10.7,1.2],[11.0,1.2],[11.0,1.1],[11.2,1.2],[11.4,1.2],[11.6,1.3],[11.8,1.3],[12.0,1.4],[12.2,1.4],[12.3,1.4],[12.5,1.4],[12.7,1.5],[12.8,1.5],[13.0,1.5],[13.1,1.6],[13.3,1.6],[13.4,1.6],[13.6,1.7],[13.8,1.7],[13.9,1.7],[14.1,1.7],[14.3,1.7],[14.4,1.7],[14.6,1.7],[14.8,1.8],[15.0,1.9],[15.2,2.0],[15.4,2.1],[15.6,2.2],[15.8,2.4],[15.9,2.3],[16.1,2.2],[16.3,2.2],[16.4,2.1],[16.6,2.1],[16.8,2.0],[17.0,2.1],[17.2,2.2],[17.4,2.3],[17.6,2.4],[17.8,2.5],[18.0,2.6],[18.1,2.6],[18.2,2.6],[18.4,2.7],[18.5,2.7],[18.6,2.7],[18.7,2.8],[19.0,2.8],[19.3,2.9],[19.6,3.0],[19.9,3.1],[20.2,3.2],[20.4,3.3],[20.7,3.4],[21.0,3.5],[21.3,3.6],[21.5,3.6],[21.7,3.7],[21.9,3.7],[22.1,3.8],[22.3,3.8],[22.6,3.9],[22.8,3.9],[23.0,4.0],[23.2,4.1],[23.4,4.1],[23.6,4.2],[23.8,4.2],[24.1,4.3],[24.3,4.4],[24.6,4.5],[24.9,4.6],[25.1,4.7],[25.4,4.7],[25.7,4.8],[25.9,4.9],[26.2,5.0],[26.5,5.1],[26.7,5.2],[27.0,5.3],[27.3,5.4],[27.6,5.5],[27.9,5.5],[28.2,5.6],[28.5,5.7],[28.9,5.8],[29.2,5.9],[29.5,6.0],[29.8,6.1],[30.1,6.2],[30.4,6.3],[30.7,6.4],[31.1,6.5],[31.4,6.6],[31.8,6.7],[32.1,6.8],[32.5,6.9],[32.8,7.0],[33.2,7.1],[33.5,7.1],[33.9,7.2],[34.2,7.3],[34.6,7.4],[34.9,7.5],[35.3,7.6],[35.8,7.7],[36.2,7.7],[36.6,7.8],[37.1,7.9],[37.5,7.9],[37.9,8.0],[38.4,8.1],[38.8,8.1],[39.2,8.2],[39.7,8.3],[40.1,8.4],[40.5,8.4],[40.9,8.4],[41.3,8.4],[41.7,8.4],[42.1,8.5],[42.6,8.5],[43.0,8.5],[43.4,8.5],[43.8,8.5],[44.2,8.6],[44.6,8.6],[45.0,8.6],[45.3,8.6],[45.6,8.5],[45.8,8.5],[46.1,8.5],[46.4,8.4],[46.7,8.4],[46.9,8.4],[47.2,8.4],[47.5,8.3],[47.8,8.3],[48.0,8.3],[48.3,8.2],[48.5,8.2],[48.7,8.2],[48.9,8.2],[49.1,8.1],[49.3,8.1],[49.5,8.1],[49.7,8.1],[49.9,8.0],[50.1,8.0],[50.3,8.0],[50.5,8.0],[50.7,8.0],[50.8,8.0],[50.9,8.0],[51.1,8.0],[51.2,8.1],[51.3,8.1],[51.4,8.1],[51.5,8.1],[51.6,8.2],[51.8,8.2],[51.9,8.2],[52.0,8.2],[52.1,8.3],[52.2,8.2],[52.3,8.2],[52.3,8.1],[52.4,8.1],[52.5,8.1],[52.6,8.0],[52.6,8.0],[52.7,8.0],[52.8,7.9],[52.9,7.9],[52.9,7.8],[53.0,7.8],[53.0,7.8],[53.0,7.8],[53.0,7.8],[53.0,7.8],[53.0,7.8],[53.1,7.9],[53.1,7.9],[53.1,7.9],[53.1,7.9],[53.1,7.9],[53.1,7.9],[53.1,7.9]];
+function wsdOf(W, Y){
+  if(W===null || Y===null || Y<1) return null;
+  var mo = Math.min(Y*12+6, WREF_M.length-1);
+  var m = WREF_M[mo], f = WREF_F[mo];
+  return {mo:mo, m:(W-m[0])/m[1], f:(W-f[0])/f[1]};
+}
+function sdTxt(v){ var t = Math.abs(v).toFixed(1); return (t==="0.0" ? "±" : (v>0?"+":"−")) + t; }
+function wsdHTML(){
+  var st = state(), r = (autoW||autoY) ? null : wsdOf(st.W, st.Y);
+  if(!r) return "";
+  return '<span class="wsd"><span class="m'+(Math.abs(r.m)>=2?" hi":"")+'">男 '+sdTxt(r.m)+'SD</span>'
+       + '<span class="f'+(Math.abs(r.f)>=2?" hi":"")+'">女 '+sdTxt(r.f)+'SD</span></span>';
 }
 
 /* ===================== スロット ===================== */
@@ -536,6 +613,11 @@ function listFor(cat){
   for(i=0;i<DRUGS.length;i++) if(cat==="all" || DRUGS[i].cat===cat) out.push(DRUGS[i]);
   return out;
 }
+function esc(t){ return String(t==null?"":t).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* 全角文字（かな・漢字・全角記号）だけを字間詰めの span で囲む */
+function cjk(h){ return h.replace(/([\u3000-\u30ff\u3400-\u9fff\uff01-\uff60]+)/g, '<span class="cj">$1</span>'); }
 
 function buildSlots(){
   var host = $("#slots");
@@ -546,86 +628,196 @@ function buildSlots(){
 
 function buildSlot(i){
   var slot = el("div","slot");
+  var row = el("div","row");
 
-  var h = el("div","slot-h");
-  var b = el("b"); b.textContent = "薬剤 "+(i+1); h.appendChild(b);
-  var cats = el("div","cats");
-  for(var c=0;c<CATS.length;c++){
-    (function(code,label){
-      var btn = el("button");
-      btn.textContent = label;
-      if(slotCat[i]===code) btn.className = "on";
-      btn.onclick = function(){ slotCat[i] = code; buildSlots(); };
-      cats.appendChild(btn);
-    })(CATS[c][0],CATS[c][1]);
-  }
-  h.appendChild(cats); slot.appendChild(h);
+  var nm = el("button","dname"); nm.id = "name"+i; nm.type = "button";
+  nm.title = "タップで詳細";
+  nm.onclick = function(){ openDetail(slotDrug[i], i); };
+  row.appendChild(nm);
 
-  var body = el("div","body");
-  var left = el("div","left");
+  var rv = el("div","rv");
+  var vals = el("div","vals"); vals.id = "res"+i;
+  rv.appendChild(vals);
+  row.appendChild(rv);
+  slot.appendChild(row);
 
-  var pick = el("div","pick");
-  var sel = el("select"); sel.id = "sel"+i;
-
-  var list = listFor(slotCat[i]), cur = 0;
-  for(var d=0;d<list.length;d++){
-    var op = document.createElement("option");
-    op.value = list[d].id; op.textContent = list[d].n;
-    if(list[d].id===slotDrug[i]) cur = d;
-    sel.appendChild(op);
-  }
-  if(list.length) slotDrug[i] = list[cur].id;
-  sel.selectedIndex = cur;
-  var nm = el("div","name"); nm.id = "name"+i;
-  sel.onchange = function(){ slotDrug[i] = sel.value; renderResults(); };
-
-  pick.appendChild(sel); pick.appendChild(nm);
-  left.appendChild(pick);
-
+  var row2 = el("div","row2");
   var sub = el("div","subline"); sub.id = "sub"+i;
-  left.appendChild(sub);
+  row2.appendChild(sub);
+  var chg = el("button","chg"); chg.type = "button"; chg.textContent = "変更";
+  chg.onclick = function(){ openPicker(i); };
+  row2.appendChild(chg);
 
-  body.appendChild(left);
-  var res = el("div","res"); res.id = "res"+i;
-  body.appendChild(res);
-  slot.appendChild(body);
+  slot.appendChild(row2);
+  var fl = el("div"); fl.id = "flag"+i;
+  slot.appendChild(fl);
   return slot;
 }
 
-function updateSub(i){
-  var host = document.getElementById("sub"+i); if(!host) return;
-  var d = byId[slotDrug[i]], parts = [];
-  var nm = document.getElementById("name"+i);
-  if(nm) nm.textContent = d ? d.n : "";
-  if(d){
-    if(d.s) parts.push(d.s);
-    parts.push(basisOf(d));
-    if(d.freq) parts.push(d.freq);
-  }
-  host.textContent = parts.join("　/　");
+function sublineOf(d, r){
+  var parts = [];
+  if(d.s) parts.push(d.s);
+  parts.push(basisOf(d));
+  var f = (r && r.freq) || d.freq;
+  if(f) parts.push(f);
+  return parts.join("　/　");
+}
+
+function valsHTML(r){
+  if(r.none) return '<span class="vbig none">'+esc(r.big)+'</span>';
+  return (r.amt ? '<span class="amt">'+esc(r.amt)+'</span>' : '')
+       + '<span class="vbig">'+esc(r.big)+'</span>';
 }
 
 function renderResults(){
   var st = state();
   for(var i=0;i<slotCount;i++){
-    updateSub(i);
-    var host = document.getElementById("res"+i); if(!host) continue;
-    var r = calc(byId[slotDrug[i]], st.W, st.Y);
-    var html;
-    if(r.none){
-      html = '<div class="big none">'+r.big+'</div>';
-    }else{
-      html = '<div class="vals">';
-      if(r.amt) html += '<div class="v"><div class="vlab">成分量</div><div class="vnum">'+r.amt+'</div></div>';
-      html += '<div class="v"><div class="vlab">'+(r.biglab||"薬剤量")+'</div><div class="vnum big">'+r.big+'</div></div>';
-      html += '</div>';
-    }
-    if(r.freq) html += '<div class="freq">'+r.freq+'</div>';
-    if(r.det)  html += '<div class="det">'+String(r.det).replace(/\n/g,"<br>")+'</div>';
-    if(r.flag) html += '<div class="flag">'+r.flag+'</div>';
-    host.innerHTML = html;
+    var d = byId[slotDrug[i]];
+    var r = calc(d, st.W, st.Y);
+    var nm = document.getElementById("name"+i);
+    if(nm) nm.innerHTML = d ? cjk(esc(d.n.slice(0,-2)))+'<span style="white-space:nowrap">'+cjk(esc(d.n.slice(-2)))+'<span class="i">i</span></span>' : "—";
+    var sub = document.getElementById("sub"+i);
+    if(sub) sub.textContent = d ? sublineOf(d, r) : "";
+    var host = document.getElementById("res"+i);
+    if(host) host.innerHTML = valsHTML(r);
+    var fl = document.getElementById("flag"+i);
+    if(fl) fl.innerHTML = r.flag ? '<span class="wflag">'+esc(r.flag)+'</span>' : "";
   }
   renderAll(st);
+  markChips();
+  fitRows();
+  if(sheetMode==="detail") renderDetail();
+}
+
+function fitRows(){
+  var rows = document.querySelectorAll("#slots .row");
+  for(var i=0;i<rows.length;i++){
+    var row = rows[i], nm = row.querySelector(".dname"), rv = row.querySelector(".rv");
+    var parts = [nm].concat([].slice.call(row.querySelectorAll(".amt,.vbig")));
+    for(var j=0;j<parts.length;j++) parts[j].style.fontSize = "";
+    var base = parts.map(function(e){ return parseFloat(getComputedStyle(e).fontSize); });
+    for(var sc=1; sc>=0.72; sc-=0.04){
+      for(j=0;j<parts.length;j++) parts[j].style.fontSize = (sc<1 ? (base[j]*sc).toFixed(1)+"px" : "");
+      var one = Math.abs(nm.offsetTop - rv.offsetTop) < 12 && nm.offsetHeight < base[0]*sc*1.3*1.6 + 8;
+      if(one) break;
+    }
+  }
+}
+window.addEventListener("resize", function(){ fitRows(); });
+
+/* ===================== シート ===================== */
+var sheetMode = null, sheetDrug = null, sheetSlot = null, pickCat = "all", pickQ = "";
+
+function openSheet(){ $("#ov").className = "ov open"; document.body.style.overflow = "hidden"; }
+function closeSheet(){
+  $("#ov").className = "ov"; document.body.style.overflow = "";
+  sheetMode = null; $("#sheet").innerHTML = "";
+}
+$("#ov").addEventListener("click", function(ev){ if(ev.target===this) closeSheet(); });
+document.addEventListener("keydown", function(ev){ if(ev.key==="Escape" && sheetMode) closeSheet(); });
+
+function sheetHead(title, small){
+  return '<div class="sh-h"><h2>'+esc(title)+(small?'<small>'+esc(small)+'</small>':'')+'</h2>'
+       + '<button class="sh-x" id="shx" type="button" aria-label="閉じる">×</button></div>';
+}
+
+function openDetail(id, slotIdx){
+  if(!byId[id]) return;
+  sheetMode = "detail"; sheetDrug = id; sheetSlot = (slotIdx===undefined ? null : slotIdx);
+  renderDetail(); openSheet();
+}
+function renderDetail(){
+  var d = byId[sheetDrug], st = state(), r = calc(d, st.W, st.Y);
+  var h = sheetHead(d.n, d.s);
+  h += '<div class="sh-b">';
+  h += '<div class="dres">';
+  if(r.none){
+    h += '<div class="none">'+esc(r.big)+'</div>';
+  }else{
+    if(r.amt) h += '<div><div class="vlab">成分量</div><div class="vnum">'+esc(r.amt)+'</div></div>';
+    h += '<div><div class="vlab">'+esc(r.biglab||"薬剤量")+'</div><div class="vnum big">'+esc(r.big)+'</div></div>';
+  }
+  h += '</div>';
+  if(r.flag) h += '<div class="dflag">'+esc(r.flag)+'</div>';
+  h += '<table class="kv">';
+  h += '<tr><th>分類</th><td>'+esc(d.cat)+'</td></tr>';
+  if(d.s) h += '<tr><th>一般名</th><td>'+esc(d.s)+'</td></tr>';
+  h += '<tr><th>基準</th><td>'+esc(basisOf(d))+'</td></tr>';
+  if(r.freq || d.freq) h += '<tr><th>用法</th><td>'+esc(r.freq || d.freq)+'</td></tr>';
+  if(r.det) h += '<tr><th>計算・注記</th><td>'+esc(r.det).replace(/\n/g,"<br>")+'</td></tr>';
+  var st2 = [];
+  if(st.Y!==null) st2.push(st.Y+" 歳"+(autoY?"（推定）":""));
+  if(st.W!==null) st2.push(trimZero(fix(st.W,1))+" kg"+(autoW?"（推定）":""));
+  h += '<tr><th>計算条件</th><td>'+(st2.length?esc(st2.join(" / ")):"未入力")+'</td></tr>';
+  var ws = (autoW||autoY) ? null : wsdOf(st.W, st.Y);
+  if(ws) h += '<tr><th>体重SD</th><td>男 '+sdTxt(ws.m)+' SD ／ 女 '+sdTxt(ws.f)+' SD'
+    + '<br><span class="cat">'+Math.floor(ws.mo/12)+'歳'+(ws.mo%12)+'か月の基準値（日本小児内分泌学会 2000年度データ）</span></td></tr>';
+  h += '</table>';
+  if(sheetSlot!==null) h += '<div class="sh-actions"><button class="btn" id="todchg" type="button">この薬剤を変更</button></div>';
+  h += '</div>';
+  $("#sheet").innerHTML = h;
+  $("#shx").onclick = closeSheet;
+  if(sheetSlot!==null){ var slotIdx = sheetSlot; $("#todchg").onclick = function(){ openPicker(slotIdx); }; }
+}
+
+var pickAdd = false;
+function pickCurId(){ return pickAdd ? null : slotDrug[sheetSlot]; }
+function openPicker(i, isAdd){
+  sheetMode = "pick"; sheetSlot = i; pickQ = ""; pickAdd = !!isAdd;
+  var d = pickAdd ? null : byId[slotDrug[i]];
+  pickCat = d ? d.cat : "all";
+  var h = sheetHead(pickAdd ? "薬剤を追加" : "薬剤 "+(i+1)+" を選択");
+  if(!pickAdd) h = h.replace('<button class="sh-x"', '<button class="pk-del" id="pkdel" type="button">この薬剤を削除</button><button class="sh-x"');
+  h += '<div class="pk-top"><div class="pcats" id="pcats"></div>'
+     + '<input class="pk-q" id="pkq" type="search" placeholder="薬剤名・一般名で検索" autocomplete="off"></div>';
+  h += '<div class="plist" id="plist"></div>';
+  $("#sheet").innerHTML = h;
+  $("#shx").onclick = closeSheet;
+  if(!pickAdd){ var slotIdx = i; $("#pkdel").onclick = function(){ closeSheet(); removeSlot(slotIdx); }; }
+  $("#pkq").addEventListener("input", function(){
+    pickQ = this.value.replace(/^\s+|\s+$/g,"");
+    if(pickQ && pickCat!=="all"){ pickCat = "all"; renderPickCats(); }
+    renderPickList();
+  });
+  renderPickCats(); renderPickList(); openSheet();
+}
+function renderPickCats(){
+  var host = $("#pcats"); host.innerHTML = "";
+  for(var c=0;c<CATS.length;c++){
+    (function(code,label){
+      var b = el("button"); b.type = "button"; b.textContent = label;
+      if(pickCat===code) b.className = "on";
+      b.onclick = function(){ pickCat = code; renderPickCats(); renderPickList(); };
+      host.appendChild(b);
+    })(CATS[c][0],CATS[c][1]);
+  }
+}
+function renderPickList(){
+  var host = $("#plist"), st = state(), list = listFor(pickCat), q = pickQ.toLowerCase();
+  host.innerHTML = "";
+  var curEl = null, n = 0;
+  for(var k=0;k<list.length;k++){
+    var d = list[k];
+    if(q && (d.n+" "+(d.s||"")).toLowerCase().indexOf(q)<0) continue;
+    n++;
+    var r = calc(d, st.W, st.Y);
+    var b = el("button","pitem"+(d.id===pickCurId()?" cur":"")); b.type = "button";
+    b.innerHTML = '<span class="pn"><b>'+esc(d.n)+'</b><span>'+esc(sublineOf(d, r))+'</span></span>'
+      + (pickCat==="all" ? '<span class="pc">'+esc(d.cat)+'</span>' : '')
+      + (r.none ? '' : '<span class="pv">'+esc(r.big)+'</span>');
+    (function(id){ b.onclick = function(){
+      if(pickAdd){
+        var k = slotDrug.indexOf(id, slotCount); if(k>=0) slotDrug.splice(k,1);
+        slotDrug.splice(slotCount, 0, id); slotCount++;
+        closeSheet(); setCntButtons(); buildSlots();
+        var sl = document.querySelectorAll("#slots .slot"); if(sl.length) sl[sl.length-1].scrollIntoView({block:"nearest"});
+      }else{ slotDrug[sheetSlot] = id; closeSheet(); renderResults(); }
+    }; })(d.id);
+    if(d.id===pickCurId()) curEl = b;
+    host.appendChild(b);
+  }
+  if(!n) host.innerHTML = '<div class="pempty">該当する薬剤がありません</div>';
+  if(curEl && !q) setTimeout(function(){ host.scrollTop = Math.max(0, curEl.offsetTop - host.offsetTop - 60); }, 0);
 }
 
 function basisOf(d){
@@ -647,7 +839,7 @@ function renderAll(st){
   tb.innerHTML = "";
   for(var i=0;i<DRUGS.length;i++){
     var d = DRUGS[i], r = calc(d, st.W, st.Y), tr = el("tr");
-    tr.innerHTML = '<td>'+d.n+(d.s?' <span class="cat">'+d.s+'</span>':'')+'</td>'
+    tr.innerHTML = '<td class="tn" data-id="'+d.id+'">'+d.n+(d.s?' <span class="cat">'+d.s+'</span>':'')+'</td>'
       + '<td class="cat">'+basisOf(d)+'</td>'
       + '<td class="n">'+((r.none||!r.amt)?"—":r.amt)+'</td>'
       + '<td class="n">'+(r.none?"—":r.big)+'</td>'
@@ -655,6 +847,10 @@ function renderAll(st){
     tb.appendChild(tr);
   }
 }
+$("#alltab").addEventListener("click", function(ev){
+  var t = ev.target; while(t && t!==this && !(t.getAttribute && t.getAttribute("data-id"))) t = t.parentNode;
+  if(t && t!==this) openDetail(t.getAttribute("data-id"));
+});
 
 /* ===================== セット ===================== */
 function renderChips(){
@@ -666,16 +862,28 @@ function renderChips(){
   add.innerHTML = "＋ 現在の組合せを登録";
   add.onclick = function(){ $("#saverow").className = "saverow open"; $("#setname").focus(); };
   host.appendChild(add);
+  markChips();
 }
 function makeChip(set, isUser, idx){
   var c = el("button","chip"+(isUser?" user":""));
-  var label = el("span"); label.textContent = set.name+"（"+set.ids.length+"）";
+  var label = el("span"); label.textContent = set.name;
+  c._ids = set.ids;
   c.appendChild(label);
   c.onclick = function(){ applySet(set); };
   if(isUser){
-    var x = el("span","x"); x.textContent = "×";
+    /* 誤タップ防止：× → 「削除」の2段階。4秒で元に戻る */
+    var x = el("span","x"); x.textContent = "×"; x.title = "このセットを削除";
+    var armed = false, tm = null;
+    function disarm(){ armed = false; if(tm){ clearTimeout(tm); tm = null; }
+      x.textContent = "×"; x.className = "x"; c.className = c.className.replace(/\s*\barm\b/g,""); }
     x.onclick = function(ev){
       ev.stopPropagation();
+      if(!armed){
+        armed = true; x.textContent = "削除"; x.className = "x go"; c.className += " arm";
+        tm = setTimeout(disarm, 4000);
+        return;
+      }
+      disarm();
       userSets.splice(idx,1); saveSets(); renderChips();
       flash("「"+set.name+"」を削除しました");
     };
@@ -683,21 +891,36 @@ function makeChip(set, isUser, idx){
   }
   return c;
 }
+/* 現在の薬剤の並びと一致するセットのボタンを選択色に */
+function markChips(){
+  var cs = document.querySelectorAll("#chips .chip"), cur = slotDrug.slice(0, slotCount).join(",");
+  for(var i=0;i<cs.length;i++){
+    if(!cs[i]._ids) continue;
+    var on = cs[i]._ids.slice(0, MAXSLOT).join(",")===cur && slotCount>0;
+    cs[i].className = cs[i].className.replace(/\s*\bon\b/g,"") + (on?" on":"");
+  }
+}
 function applySet(set, silent){
-  var n = set.ids.length; if(n<1) n = 1; if(n>MAXSLOT) n = MAXSLOT;
+  var n = set.ids.length; if(n>MAXSLOT) n = MAXSLOT;
   slotCount = n;
   for(var i=0;i<MAXSLOT;i++){
     if(set.ids[i]) slotDrug[i] = set.ids[i];
-    slotCat[i] = "all";
   }
   setCntButtons(); buildSlots();
   if(!silent) flash("「"+set.name+"」を読み込み");
 }
 function setCntButtons(){
-  var bs = $("#cnt").getElementsByTagName("button");
-  for(var i=0;i<bs.length;i++)
-    bs[i].className = (parseInt(bs[i].getAttribute("data-n"),10)===slotCount) ? "on" : "";
+  var b = $("#adddrug"); if(!b) return;
+  b.disabled = (slotCount>=MAXSLOT);
+  b.textContent = (slotCount>=MAXSLOT) ? "最大 "+MAXSLOT+" 剤です" : "＋ 薬剤を追加";
 }
+function removeSlot(i){
+  var id = slotDrug.splice(i,1)[0];
+  slotDrug.push(id);            /* 末尾（非表示枠）へ回す */
+  slotCount = Math.max(0, slotCount-1);
+  setCntButtons(); buildSlots();
+}
+$("#adddrug").onclick = function(){ if(slotCount<MAXSLOT) openPicker(slotCount, true); };
 
 /* ===================== 初期化 ===================== */
 loadSets();
@@ -745,15 +968,7 @@ $("#clear").onclick = function(){
   $("#w").className=""; $("#y").className="";
   renderResults(); showSummary(); $("#w").focus();
 };
-var cbs = $("#cnt").getElementsByTagName("button");
-for(var z=0;z<cbs.length;z++){
-  (function(btn){
-    btn.onclick = function(){
-      slotCount = parseInt(btn.getAttribute("data-n"),10);
-      setCntButtons(); buildSlots();
-    };
-  })(cbs[z]);
-}
+
 $("#dosave").onclick = function(){
   var nm = $("#setname").value.replace(/^\s+|\s+$/g,"");
   if(!nm){ flash("セット名を入力してください", true); return; }
